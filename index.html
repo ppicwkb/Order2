@@ -929,7 +929,7 @@
     }
     
     // Fetch data from Google Sheets using public CSV export
-    async function fetchGoogleSheetsData(sheetId, sheetName, filterDate = null) {
+    async function fetchGoogleSheetsData(sheetId, sheetName) {
       try {
         // Use the CSV export URL for public sheets with specific sheet name
         const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
@@ -943,7 +943,7 @@
         console.log("Raw CSV data:", csvText.substring(0, 500)); // Debug: Show first 500 chars of CSV
         
         // Parse CSV data
-        const data = parseCSV(csvText, filterDate);
+        const data = parseCSV(csvText);
         
         return data;
       } catch (error) {
@@ -954,7 +954,7 @@
     }
     
     // Parse CSV data
-    function parseCSV(csvText, filterDate = null) {
+    function parseCSV(csvText) {
       const lines = csvText.split('\n');
       if (lines.length < 2) {
         console.log("Not enough lines in CSV data");
@@ -1068,10 +1068,7 @@
           stockKg: parseFloat(cleanValues[8]) || 0
         };
         
-        // Filter by date if needed
-        if (!filterDate || item.tanggal === filterDate) {
-          data.push(item);
-        }
+        data.push(item);
       }
       
       console.log("Parsed data items:", data.length);
@@ -1079,7 +1076,7 @@
     }
     
     // Fungsi untuk memuat data
-    async function loadData(filterDate = null) {
+    async function loadData() {
       document.getElementById('tableBody').innerHTML = `
         <tr>
           <td colspan="10" class="px-6 py-8 text-center text-gray-500">
@@ -1105,7 +1102,7 @@
         storePreviousStats();
         
         // Fetch data from Google Sheets
-        const sheetData = await fetchGoogleSheetsData(SHEET_ID, SHEET_NAME, filterDate);
+        const sheetData = await fetchGoogleSheetsData(SHEET_ID, SHEET_NAME);
         
         // Reset data
         allData = [];
@@ -1610,6 +1607,9 @@
     // Apply filters and sort
     function applyFiltersAndSort() {
       const searchTerm = document.getElementById('search').value.toLowerCase();
+      const selectedDate = document.getElementById('dateFilter').value;
+      
+      console.log("Applying filters - Date:", selectedDate, "Search:", searchTerm);
       
       // Filter data
       filteredData = allData.filter(item => {
@@ -1619,11 +1619,23 @@
           String(item.nama).toLowerCase().includes(searchTerm) ||
           String(item.tanggal).includes(searchTerm);
         
+        // Date filter - improved to work with any date format
+        let matchesDate = true;
+        if (selectedDate) {
+          // Convert both dates to YYYY-MM-DD format for comparison
+          const itemDate = parseDate(item.tanggal);
+          matchesDate = itemDate === selectedDate;
+          
+          console.log(`Comparing dates: item=${itemDate}, selected=${selectedDate}, matches=${matchesDate}`);
+        }
+        
         // Product filter
         const matchesProduct = selectedProducts.length === 0 || selectedProducts.includes(item.nama);
         
-        return matchesSearch && matchesProduct;
+        return matchesSearch && matchesDate && matchesProduct;
       });
+      
+      console.log(`Filtered data: ${filteredData.length} items (from ${allData.length} total)`);
       
       // Sort data
       filteredData.sort((a, b) => {
@@ -1632,8 +1644,8 @@
         
         if (currentSort.column === 'tanggal') {
           // Special handling for dates
-          const dateA = new Date(aValue);
-          const dateB = new Date(bValue);
+          const dateA = new Date(a.tanggal);
+          const dateB = new Date(b.tanggal);
           
           if (currentSort.direction === 'asc') {
             return dateA - dateB;
@@ -2180,32 +2192,25 @@
     
     // Event listeners
     document.addEventListener('DOMContentLoaded', () => {
-      // Set default date to today
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      const day = String(today.getDate()).padStart(2, '0');
-      document.getElementById('dateFilter').value = `${year}-${month}-${day}`;
-      
       // Load initial data
       loadData();
       
       // Date filter
       document.getElementById('dateFilter').addEventListener('change', (e) => {
+        console.log("Date filter changed:", e.target.value);
+        applyFiltersAndSort();
+        
         const selectedDate = e.target.value;
         if (selectedDate) {
-          loadData(selectedDate);
-          showNotification(`Data: ${formatDate(selectedDate)}`, 'info');
+          showNotification(`Filter tanggal: ${formatDate(selectedDate)}`, 'info');
         } else {
-          loadData();
-          showNotification('Semua data', 'info');
+          showNotification('Menampilkan semua tanggal', 'info');
         }
       });
       
       // Refresh button
       document.getElementById('refreshBtn').addEventListener('click', () => {
-        const dateFilter = document.getElementById('dateFilter').value;
-        loadData(dateFilter);
+        loadData();
         showNotification('Data diperbarui', 'success');
       });
       
@@ -2312,5 +2317,5 @@
       }
     });
   </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'965d07832227aa34',t:'MTc1MzYyODY2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'965d767223acea85',t:'MTc1MzYzMzIxMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
