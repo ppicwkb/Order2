@@ -6,6 +6,9 @@
   <title>Monitoring Stok GIM v3</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Add jsPDF library for PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     
@@ -368,6 +371,60 @@
     .notification-close:hover {
       opacity: 1;
     }
+    
+    /* PDF Export Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal.show {
+      display: flex;
+    }
+    
+    .modal-content {
+      background-color: white;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      border-bottom: 1px solid var(--gray-medium);
+    }
+    
+    .modal-body {
+      padding: 1rem;
+    }
+    
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      padding: 1rem;
+      border-top: 1px solid var(--gray-medium);
+      gap: 0.5rem;
+    }
+    
+    .modal-close {
+      cursor: pointer;
+      font-size: 1.5rem;
+      line-height: 1;
+    }
   </style>
 </head>
 <body class="p-2 md:p-6">
@@ -380,6 +437,62 @@
     </span>
     <span id="notification-message" class="notification-message">Notification message</span>
     <span class="notification-close" onclick="hideNotification()">×</span>
+  </div>
+  
+  <!-- PDF Export Modal -->
+  <div id="pdfModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="text-lg font-medium">Export PDF</h3>
+        <span class="modal-close" onclick="closePdfModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="mb-4">
+          <label for="pdfTitle" class="block text-sm font-medium text-gray-700 mb-1">Judul Laporan</label>
+          <input type="text" id="pdfTitle" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 focus:outline-none" value="Laporan Stok GIM">
+        </div>
+        
+        <div class="mb-4">
+          <label for="pdfSubtitle" class="block text-sm font-medium text-gray-700 mb-1">Subjudul</label>
+          <input type="text" id="pdfSubtitle" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 focus:outline-none" value="MUID PPIC">
+        </div>
+        
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Konten</label>
+          <div class="space-y-2">
+            <div class="flex items-center">
+              <input type="checkbox" id="includeSummary" class="mr-2" checked>
+              <label for="includeSummary">Ringkasan</label>
+            </div>
+            <div class="flex items-center">
+              <input type="checkbox" id="includeChart" class="mr-2" checked>
+              <label for="includeChart">Grafik</label>
+            </div>
+            <div class="flex items-center">
+              <input type="checkbox" id="includeTable" class="mr-2" checked>
+              <label for="includeTable">Tabel Data</label>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mb-4">
+          <label for="pdfOrientation" class="block text-sm font-medium text-gray-700 mb-1">Orientasi</label>
+          <select id="pdfOrientation" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
+            <option value="portrait">Portrait</option>
+            <option value="landscape" selected>Landscape</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closePdfModal()">Batal</button>
+        <button id="generatePdfBtn" class="btn btn-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Generate PDF
+        </button>
+      </div>
+    </div>
   </div>
   
   <div class="max-w-7xl mx-auto">
@@ -410,9 +523,10 @@
             </button>
             <button id="exportBtn" class="btn btn-outline w-full md:w-auto">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 3v4a1 1 0 001 1h4" />
               </svg>
-              Export CSV
+              Export PDF
             </button>
           </div>
         </div>
@@ -735,6 +849,9 @@
   </div>
   
   <script>
+    // Initialize jsPDF
+    const { jsPDF } = window.jspdf;
+    
     // Variabel untuk data dan pagination
     let allData = [];
     let filteredData = [];
@@ -825,24 +942,9 @@
         const csvText = await response.text();
         console.log("Raw CSV data:", csvText.substring(0, 500)); // Debug: Show first 500 chars of CSV
         
-        // Extract last update info from first row (A1)
-        const lines = csvText.split('\n');
-        if (lines.length > 0) {
-          const firstLine = lines[0];
-          if (firstLine.startsWith('"Terakhir diperbarui:') || firstLine.includes('diperbarui')) {
-            lastUpdateInfo = firstLine.replace(/"/g, '').trim();
-            // Remove the first line for data processing
-            const dataCSV = lines.slice(1).join('\n');
-            const data = parseCSV(dataCSV, filterDate);
-            return data;
-          } else {
-            console.log("First line doesn't contain update info:", firstLine);
-            const data = parseCSV(csvText, filterDate);
-            return data;
-          }
-        }
-        
+        // Parse CSV data
         const data = parseCSV(csvText, filterDate);
+        
         return data;
       } catch (error) {
         console.error('Error fetching data from Google Sheets:', error);
@@ -872,6 +974,45 @@
       
       console.log("Header row found at index:", headerRowIndex);
       console.log("Header row:", lines[headerRowIndex]);
+      
+      // Look for last update info in cell K1 (which would be the 11th column of the first row)
+      // We need to parse the first row to find the 11th column
+      if (lines.length > 0) {
+        const firstRow = lines[0];
+        // Split by comma, but handle quoted values
+        const values = [];
+        let inQuotes = false;
+        let currentValue = '';
+        
+        for (let j = 0; j < firstRow.length; j++) {
+          const char = firstRow[j];
+          
+          if (char === '"' && (j === 0 || firstRow[j-1] !== '\\')) {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            values.push(currentValue);
+            currentValue = '';
+          } else {
+            currentValue += char;
+          }
+        }
+        
+        values.push(currentValue); // Add the last value
+        
+        // Clean up quotes
+        const cleanValues = values.map(v => {
+          if (v.startsWith('"') && v.endsWith('"')) {
+            return v.substring(1, v.length - 1);
+          }
+          return v;
+        });
+        
+        // Check if we have at least 11 columns (K is the 11th column, index 10)
+        if (cleanValues.length > 10) {
+          lastUpdateInfo = cleanValues[10];
+          console.log("Last update info from K1:", lastUpdateInfo);
+        }
+      }
       
       // Skip header row
       const data = [];
@@ -1013,9 +1154,9 @@
         updateStockChart();
         updateTrendChart();
         
-        // Update last refresh time from A1 cell or current time
+        // Update last refresh time from K1 cell or current time
         if (lastUpdateInfo) {
-          document.getElementById('updateTime').textContent = lastUpdateInfo.replace('Terakhir diperbarui:', '').trim();
+          document.getElementById('updateTime').textContent = lastUpdateInfo;
         } else {
           document.getElementById('updateTime').textContent = new Date().toLocaleTimeString();
         }
@@ -1808,29 +1949,233 @@
       pageNumbers.appendChild(ellipsis);
     }
     
-    // Export data to CSV
-    function exportToCSV() {
-      // Prepare CSV content
-      let csvContent = 'Tanggal,ID,Nama Produk,Inbound (Qty),Inbound (Kg),Outbound (Qty),Outbound (Kg),Stok (Qty),Stok (Kg)\n';
+    // Show PDF export modal
+    function showPdfModal() {
+      document.getElementById('pdfModal').classList.add('show');
+    }
+    
+    // Close PDF export modal
+    function closePdfModal() {
+      document.getElementById('pdfModal').classList.remove('show');
+    }
+    
+    // Generate PDF report
+    function generatePDF() {
+      // Get options from modal
+      const title = document.getElementById('pdfTitle').value || 'Laporan Stok GIM';
+      const subtitle = document.getElementById('pdfSubtitle').value || 'MUID PPIC';
+      const includeSummary = document.getElementById('includeSummary').checked;
+      const includeChart = document.getElementById('includeChart').checked;
+      const includeTable = document.getElementById('includeTable').checked;
+      const orientation = document.getElementById('pdfOrientation').value;
       
-      filteredData.forEach(item => {
-        csvContent += `${formatDate(item.tanggal)},${item.id},"${item.nama}",${item.inboundQty},${item.inboundKg},${item.outboundQty},${item.outboundKg},${item.stockQty},${item.stockKg}\n`;
+      // Create PDF document
+      const doc = new jsPDF({
+        orientation: orientation,
+        unit: 'mm',
+        format: 'a4'
       });
       
-      // Create download link
-      const encodedUri = encodeURI('data:text/csv;charset=utf-8,' + csvContent);
-      const link = document.createElement('a');
-      link.setAttribute('href', encodedUri);
-      link.setAttribute('download', `stok_gim_${new Date().toISOString().split('T')[0]}.csv`);
-      document.body.appendChild(link);
+      // Set font
+      doc.setFont('helvetica');
       
-      // Trigger download
-      link.click();
+      // Add title
+      doc.setFontSize(18);
+      doc.setTextColor(0, 51, 153);
+      doc.text(title, 14, 20);
       
-      // Clean up
-      document.body.removeChild(link);
+      // Add subtitle
+      doc.setFontSize(12);
+      doc.setTextColor(100, 100, 100);
+      doc.text(subtitle, 14, 28);
       
-      showNotification('Data berhasil diekspor ke CSV', 'success');
+      // Add date
+      const currentDate = new Date().toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+      doc.text(`Tanggal: ${currentDate}`, 14, 35);
+      
+      // Add last update info
+      if (lastUpdateInfo) {
+        doc.text(`Terakhir diperbarui: ${lastUpdateInfo}`, 14, 42);
+      }
+      
+      let yPosition = 50;
+      
+      // Add summary section
+      if (includeSummary) {
+        doc.setFontSize(14);
+        doc.setTextColor(0, 0, 0);
+        doc.text('Ringkasan', 14, yPosition);
+        yPosition += 8;
+        
+        // Get summary data
+        const uniqueProductIds = new Set(allData.map(item => item.id));
+        const uniqueProductCount = uniqueProductIds.size;
+        
+        const totalInbound = allData.reduce((sum, item) => sum + item.inboundKg, 0);
+        const totalOutbound = allData.reduce((sum, item) => sum + item.outboundKg, 0);
+        
+        const latestStockByProduct = {};
+        allData.forEach(item => {
+          if (!latestStockByProduct[item.id] || new Date(item.tanggal) > new Date(latestStockByProduct[item.id].tanggal)) {
+            latestStockByProduct[item.id] = item;
+          }
+        });
+        
+        const totalStock = Object.values(latestStockByProduct).reduce((sum, item) => sum + item.stockKg, 0);
+        
+        // Create summary table
+        const summaryData = [
+          ['Total Produk', formatNumber(uniqueProductCount)],
+          ['Total Inbound (Kg)', formatNumber(totalInbound)],
+          ['Total Outbound (Kg)', formatNumber(totalOutbound)],
+          ['Total Stok (Kg)', formatNumber(totalStock)]
+        ];
+        
+        doc.autoTable({
+          startY: yPosition,
+          head: [['Metrik', 'Nilai']],
+          body: summaryData,
+          theme: 'grid',
+          headStyles: {
+            fillColor: [37, 99, 235],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold'
+          },
+          styles: {
+            fontSize: 10
+          },
+          columnStyles: {
+            0: { cellWidth: 60 },
+            1: { cellWidth: 40, halign: 'right' }
+          }
+        });
+        
+        yPosition = doc.lastAutoTable.finalY + 15;
+      }
+      
+      // Add chart section
+      if (includeChart && stockChart) {
+        // Check if we need a new page
+        if (yPosition > 180) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        
+        doc.setFontSize(14);
+        doc.setTextColor(0, 0, 0);
+        doc.text('Grafik Stok', 14, yPosition);
+        yPosition += 8;
+        
+        // Convert chart to image
+        const stockChartCanvas = document.getElementById('stockChart');
+        const stockChartImage = stockChartCanvas.toDataURL('image/png');
+        
+        // Add chart image to PDF
+        const imgWidth = orientation === 'landscape' ? 180 : 120;
+        const imgHeight = imgWidth * 0.6;
+        doc.addImage(stockChartImage, 'PNG', 14, yPosition, imgWidth, imgHeight);
+        
+        yPosition += imgHeight + 15;
+        
+        // Add trend chart if available
+        if (trendChart) {
+          // Check if we need a new page
+          if (yPosition > 180) {
+            doc.addPage();
+            yPosition = 20;
+          }
+          
+          doc.setFontSize(14);
+          doc.text('Trend Produk', 14, yPosition);
+          yPosition += 8;
+          
+          // Convert trend chart to image
+          const trendChartCanvas = document.getElementById('trendChart');
+          const trendChartImage = trendChartCanvas.toDataURL('image/png');
+          
+          // Add trend chart image to PDF
+          doc.addImage(trendChartImage, 'PNG', 14, yPosition, imgWidth, imgHeight);
+          
+          yPosition += imgHeight + 15;
+        }
+      }
+      
+      // Add table section
+      if (includeTable) {
+        // Check if we need a new page
+        if (yPosition > 180) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        
+        doc.setFontSize(14);
+        doc.setTextColor(0, 0, 0);
+        doc.text('Data Stok', 14, yPosition);
+        yPosition += 8;
+        
+        // Prepare table data
+        const tableHead = [
+          ['Tanggal', 'ID', 'Nama Produk', 'Inbound (Kg)', 'Outbound (Kg)', 'Stok (Kg)']
+        ];
+        
+        const tableBody = filteredData.map(item => [
+          formatDate(item.tanggal),
+          item.id,
+          item.nama,
+          formatNumber(item.inboundKg),
+          formatNumber(item.outboundKg),
+          formatNumber(item.stockKg)
+        ]);
+        
+        // Add table to PDF
+        doc.autoTable({
+          startY: yPosition,
+          head: tableHead,
+          body: tableBody,
+          theme: 'grid',
+          headStyles: {
+            fillColor: [37, 99, 235],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold'
+          },
+          styles: {
+            fontSize: 8,
+            cellPadding: 2
+          },
+          columnStyles: {
+            0: { cellWidth: 20 },
+            1: { cellWidth: 15 },
+            2: { cellWidth: orientation === 'landscape' ? 80 : 40 },
+            3: { cellWidth: 25, halign: 'right' },
+            4: { cellWidth: 25, halign: 'right' },
+            5: { cellWidth: 25, halign: 'right' }
+          }
+        });
+      }
+      
+      // Add footer
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(`GIM Warehouse Monitoring System v3.0 - Halaman ${i} dari ${pageCount}`, 14, doc.internal.pageSize.height - 10);
+        doc.text(`Diekspor pada: ${new Date().toLocaleString('id-ID')}`, doc.internal.pageSize.width - 14, doc.internal.pageSize.height - 10, { align: 'right' });
+      }
+      
+      // Save PDF
+      const fileName = `Laporan_Stok_GIM_${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(fileName);
+      
+      // Close modal
+      closePdfModal();
+      
+      // Show notification
+      showNotification('PDF berhasil dibuat', 'success');
     }
     
     // Event listeners
@@ -1865,7 +2210,10 @@
       });
       
       // Export button
-      document.getElementById('exportBtn').addEventListener('click', exportToCSV);
+      document.getElementById('exportBtn').addEventListener('click', showPdfModal);
+      
+      // Generate PDF button
+      document.getElementById('generatePdfBtn').addEventListener('click', generatePDF);
       
       // Search input
       document.getElementById('search').addEventListener('input', applyFiltersAndSort);
@@ -1964,5 +2312,5 @@
       }
     });
   </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'965cb5aa40faea77',t:'MTc1MzYyNTMxNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'965d07832227aa34',t:'MTc1MzYyODY2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
