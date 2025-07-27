@@ -1,0 +1,1968 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitoring Stok GIM v3</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    :root {
+      --primary-color: #2563eb;
+      --primary-light: #dbeafe;
+      --primary-dark: #1e40af;
+      --success-color: #10b981;
+      --success-light: #d1fae5;
+      --danger-color: #ef4444;
+      --danger-light: #fee2e2;
+      --warning-color: #f59e0b;
+      --warning-light: #fef3c7;
+      --purple-color: #8b5cf6;
+      --purple-light: #ede9fe;
+      --gray-light: #f3f4f6;
+      --gray-medium: #e5e7eb;
+      --gray-dark: #6b7280;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f0f4f8;
+      color: #1f2937;
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .hover-row:hover {
+      background-color: var(--primary-light);
+      transition: background-color 0.2s;
+    }
+    
+    .loading-spinner {
+      border: 3px solid rgba(0, 0, 0, 0.1);
+      border-top: 3px solid var(--primary-color);
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .card {
+      background-color: white;
+      border-radius: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .stat-card {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 30%;
+      height: 100%;
+      background: linear-gradient(to left, rgba(255,255,255,0.15), rgba(255,255,255,0));
+      transform: skewX(-15deg);
+      pointer-events: none;
+    }
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      font-weight: 500;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
+    }
+    
+    .btn-outline {
+      border: 1px solid var(--gray-medium);
+      background-color: white;
+    }
+    
+    .btn-outline:hover {
+      background-color: var(--gray-light);
+    }
+    
+    .btn-sm {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.875rem;
+    }
+    
+    .btn-icon {
+      padding: 0.5rem;
+    }
+    
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    .badge-success {
+      background-color: var(--success-light);
+      color: var(--success-color);
+    }
+    
+    .badge-danger {
+      background-color: var(--danger-light);
+      color: var(--danger-color);
+    }
+    
+    .badge-warning {
+      background-color: var(--warning-light);
+      color: var(--warning-color);
+    }
+    
+    .badge-purple {
+      background-color: var(--purple-light);
+      color: var(--purple-color);
+    }
+    
+    /* Multi-select dropdown */
+    .multi-select {
+      position: relative;
+    }
+    
+    .multi-select-dropdown {
+      max-height: 300px;
+      overflow-y: auto;
+      position: absolute;
+      width: 100%;
+      z-index: 50;
+      background: white;
+      border: 1px solid var(--gray-medium);
+      border-radius: 0.375rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      display: none;
+      top: 100%;
+      margin-top: 0.25rem;
+    }
+    
+    .multi-select-dropdown.show {
+      display: block;
+    }
+    
+    .multi-select-option {
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+    
+    .multi-select-option:hover {
+      background-color: var(--gray-light);
+    }
+    
+    .multi-select-option.selected {
+      background-color: var(--primary-light);
+    }
+    
+    .multi-select-option input[type="checkbox"] {
+      margin-right: 0.5rem;
+    }
+    
+    .multi-select-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+      margin-top: 0.5rem;
+    }
+    
+    .multi-select-tag {
+      display: inline-flex;
+      align-items: center;
+      background-color: var(--primary-light);
+      color: var(--primary-color);
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    .multi-select-tag button {
+      margin-left: 0.25rem;
+      color: var(--primary-color);
+      font-size: 1rem;
+      line-height: 1;
+      padding: 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+    
+    /* Mobile optimizations */
+    @media (max-width: 768px) {
+      .mobile-card {
+        border-radius: 0.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        margin-bottom: 0.75rem;
+      }
+      
+      .mobile-card-header {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem;
+        border-bottom: 1px solid var(--gray-medium);
+        background-color: var(--gray-light);
+        border-top-left-radius: 0.5rem;
+        border-top-right-radius: 0.5rem;
+      }
+      
+      .mobile-card-body {
+        padding: 0.75rem;
+      }
+      
+      .mobile-card-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+      }
+      
+      .mobile-card-label {
+        color: var(--gray-dark);
+        font-size: 0.875rem;
+      }
+      
+      .mobile-card-value {
+        font-weight: 500;
+        text-align: right;
+      }
+    }
+    
+    /* Tooltip */
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .tooltip .tooltip-text {
+      visibility: hidden;
+      width: 200px;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 0.75rem;
+    }
+    
+    .tooltip:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+    
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: #a1a1a1;
+    }
+    
+    /* Notification */
+    .notification {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      color: white;
+      display: flex;
+      align-items: center;
+      z-index: 100;
+      transform: translateY(-100%);
+      opacity: 0;
+      transition: transform 0.3s, opacity 0.3s;
+    }
+    
+    .notification.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    
+    .notification-success {
+      background-color: var(--success-color);
+    }
+    
+    .notification-error {
+      background-color: var(--danger-color);
+    }
+    
+    .notification-info {
+      background-color: var(--primary-color);
+    }
+    
+    .notification-icon {
+      margin-right: 0.5rem;
+    }
+    
+    .notification-message {
+      flex: 1;
+    }
+    
+    .notification-close {
+      margin-left: 0.5rem;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+    
+    .notification-close:hover {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="p-2 md:p-6">
+  <!-- Notification container -->
+  <div id="notification" class="notification">
+    <span class="notification-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+      </svg>
+    </span>
+    <span id="notification-message" class="notification-message">Notification message</span>
+    <span class="notification-close" onclick="hideNotification()">×</span>
+  </div>
+  
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden mb-6">
+      <div class="bg-gradient-to-r from-blue-600 to-blue-800 p-4 md:p-6">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <div class="flex items-center mb-4 md:mb-0">
+            <div class="bg-white p-2 rounded-lg shadow-md mr-4">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+              </svg>
+            </div>
+            <div>
+              <h1 class="text-xl md:text-2xl font-bold text-white">Monitoring Stok GIM</h1>
+              <p class="text-blue-100 text-sm">MUID PPIC - Versi 3.0</p>
+            </div>
+          </div>
+          <div class="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-2 w-full md:w-auto">
+            <div class="relative w-full md:w-auto">
+              <input type="date" id="dateFilter" class="bg-white text-gray-700 px-4 py-2 rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-blue-500 w-full">
+            </div>
+            <button id="refreshBtn" class="btn btn-primary w-full md:w-auto">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Refresh Data
+            </button>
+            <button id="exportBtn" class="btn btn-outline w-full md:w-auto">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Export CSV
+            </button>
+          </div>
+        </div>
+        <div id="lastUpdate" class="text-blue-100 text-sm mt-2 text-center md:text-right">
+          Terakhir diperbarui: <span id="updateTime">-</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Dashboard Summary -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6">
+      <div class="stat-card card p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-l-4 border-blue-500">
+        <div class="flex justify-between items-center">
+          <div>
+            <p class="text-gray-500 text-xs md:text-sm">Total Produk</p>
+            <h3 id="totalProducts" class="text-lg md:text-2xl font-bold">-</h3>
+          </div>
+          <div class="bg-blue-500 text-white p-2 md:p-3 rounded-full">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-2 text-xs text-gray-500">
+          <span id="uniqueProductsChange" class="font-medium"></span>
+        </div>
+      </div>
+      
+      <div class="stat-card card p-4 bg-gradient-to-br from-green-50 to-green-100 border-l-4 border-green-500">
+        <div class="flex justify-between items-center">
+          <div>
+            <p class="text-gray-500 text-xs md:text-sm">Total Inbound (Kg)</p>
+            <h3 id="totalInbound" class="text-lg md:text-2xl font-bold">-</h3>
+          </div>
+          <div class="bg-green-500 text-white p-2 md:p-3 rounded-full">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-2 text-xs text-gray-500">
+          <span id="inboundChange" class="font-medium"></span>
+        </div>
+      </div>
+      
+      <div class="stat-card card p-4 bg-gradient-to-br from-red-50 to-red-100 border-l-4 border-red-500">
+        <div class="flex justify-between items-center">
+          <div>
+            <p class="text-gray-500 text-xs md:text-sm">Total Outbound (Kg)</p>
+            <h3 id="totalOutbound" class="text-lg md:text-2xl font-bold">-</h3>
+          </div>
+          <div class="bg-red-500 text-white p-2 md:p-3 rounded-full">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-2 text-xs text-gray-500">
+          <span id="outboundChange" class="font-medium"></span>
+        </div>
+      </div>
+      
+      <div class="stat-card card p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-l-4 border-purple-500">
+        <div class="flex justify-between items-center">
+          <div>
+            <p class="text-gray-500 text-xs md:text-sm">Total Stok (Kg)</p>
+            <h3 id="totalStock" class="text-lg md:text-2xl font-bold">-</h3>
+          </div>
+          <div class="bg-purple-500 text-white p-2 md:p-3 rounded-full">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-2 text-xs text-gray-500">
+          <span id="stockChange" class="font-medium"></span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Chart Section -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <div class="card p-4">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+          <h3 class="text-lg font-medium text-gray-700">Ringkasan Stok (Kg)</h3>
+          <div class="mt-2 md:mt-0">
+            <select id="chartView" class="bg-white border border-gray-300 text-gray-700 rounded-lg px-3 py-1 text-sm focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
+              <option value="top5">Top 5 Produk</option>
+              <option value="top10">Top 10 Produk</option>
+              <option value="low5">5 Produk Terendah</option>
+            </select>
+          </div>
+        </div>
+        <div class="h-64">
+          <canvas id="stockChart"></canvas>
+        </div>
+      </div>
+      
+      <div class="card p-4">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+          <h3 class="text-lg font-medium text-gray-700">Trend Produk</h3>
+          <div class="mt-2 md:mt-0">
+            <select id="trendProductSelect" class="bg-white border border-gray-300 text-gray-700 rounded-lg px-3 py-1 text-sm focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
+              <!-- Product options will be inserted here -->
+            </select>
+          </div>
+        </div>
+        <div class="h-64">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Search and Filter -->
+    <div class="card p-4 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <input type="text" id="search" placeholder="Cari produk atau tanggal..." 
+                 class="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
+        </div>
+        
+        <div class="multi-select">
+          <div class="relative">
+            <input type="text" id="productFilterInput" placeholder="Pilih produk..." 
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
+            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+          <div id="productFilterDropdown" class="multi-select-dropdown">
+            <div class="p-2 border-b border-gray-200">
+              <label class="flex items-center">
+                <input type="checkbox" id="selectAllProducts" class="mr-2">
+                <span>Pilih Semua</span>
+              </label>
+            </div>
+            <div id="productOptions">
+              <!-- Product options will be inserted here -->
+            </div>
+          </div>
+          <div id="selectedProductTags" class="multi-select-tags">
+            <!-- Selected product tags will be inserted here -->
+          </div>
+        </div>
+        
+        <div class="flex space-x-2">
+          <div class="relative flex-1">
+            <select id="sortField" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
+              <option value="tanggal">Tanggal</option>
+              <option value="id">ID</option>
+              <option value="nama">Nama Produk</option>
+              <option value="inboundKg">Inbound (Kg)</option>
+              <option value="outboundKg">Outbound (Kg)</option>
+              <option value="stockKg">Stok (Kg)</option>
+            </select>
+          </div>
+          <button id="sortDirection" class="btn btn-outline btn-icon">
+            <svg id="sortAscIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+            </svg>
+            <svg id="sortDescIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Table (Desktop) -->
+    <div class="card mb-6">
+      <div class="hidden md:block overflow-x-auto">
+        <table id="stockTable" class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-sort="tanggal">
+                Tanggal
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                </svg>
+              </th>
+              <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-sort="id">
+                ID
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                </svg>
+              </th>
+              <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-sort="nama">
+                Nama Produk
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                </svg>
+              </th>
+              <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-sort="inboundQty">
+                Inbound (Qty)
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                </svg>
+              </th>
+              <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-sort="inboundKg">
+                Inbound (Kg)
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                </svg>
+              </th>
+              <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-sort="outboundQty">
+                Outbound (Qty)
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                </svg>
+              </th>
+              <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-sort="outboundKg">
+                Outbound (Kg)
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                </svg>
+              </th>
+              <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-sort="stockQty">
+                Stok (Qty)
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                </svg>
+              </th>
+              <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-sort="stockKg">
+                Stok (Kg)
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                </svg>
+              </th>
+              <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200" id="tableBody">
+            <tr>
+              <td colspan="10" class="px-6 py-8 text-center text-gray-500">
+                <div class="flex flex-col items-center">
+                  <div class="loading-spinner mb-4"></div>
+                  <p>Memuat data...</p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+          <tfoot class="bg-gray-50">
+            <tr>
+              <td colspan="3" class="px-4 py-3 text-left text-sm font-medium text-gray-900">Total</td>
+              <td id="totalInboundQty" class="px-4 py-3 text-center text-sm font-medium text-gray-900">-</td>
+              <td id="totalInboundKg" class="px-4 py-3 text-center text-sm font-medium text-green-600">-</td>
+              <td id="totalOutboundQty" class="px-4 py-3 text-center text-sm font-medium text-gray-900">-</td>
+              <td id="totalOutboundKg" class="px-4 py-3 text-center text-sm font-medium text-red-600">-</td>
+              <td id="totalStockQty" class="px-4 py-3 text-center text-sm font-medium text-gray-900">-</td>
+              <td id="totalStockKg" class="px-4 py-3 text-center text-sm font-medium text-purple-600">-</td>
+              <td class="px-4 py-3 text-center text-sm font-medium text-gray-900">-</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      
+      <!-- Mobile Cards -->
+      <div id="mobileCards" class="md:hidden p-4">
+        <div class="flex justify-center items-center py-8">
+          <div class="flex flex-col items-center">
+            <div class="loading-spinner mb-4"></div>
+            <p class="text-gray-500">Memuat data...</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Mobile Totals -->
+      <div class="md:hidden p-4 bg-gray-50 rounded-lg border-t border-gray-200">
+        <h4 class="text-sm font-medium text-gray-700 mb-2">Total</h4>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <p class="text-xs text-gray-500">Inbound</p>
+            <p id="mobileTotalInbound" class="font-medium text-green-600">- Qty / - Kg</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Outbound</p>
+            <p id="mobileTotalOutbound" class="font-medium text-red-600">- Qty / - Kg</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Stok</p>
+            <p id="mobileTotalStock" class="font-medium text-purple-600">- Qty / - Kg</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Pagination -->
+    <div class="card p-4 mb-6">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-3 md:space-y-0">
+        <div class="text-sm text-gray-500 text-center md:text-left">
+          Menampilkan <span id="showing">0</span> dari <span id="totalItems">0</span> item
+        </div>
+        <div class="flex justify-center md:justify-end space-x-2">
+          <button id="prevPage" class="btn btn-outline btn-sm disabled:opacity-50 disabled:cursor-not-allowed">
+            &laquo;
+          </button>
+          <div id="pageNumbers" class="flex space-x-1">
+            <!-- Page numbers will be inserted here -->
+          </div>
+          <button id="nextPage" class="btn btn-outline btn-sm disabled:opacity-50 disabled:cursor-not-allowed">
+            &raquo;
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="text-center text-gray-500 text-sm py-4">
+      &copy; 2023 GIM Warehouse Monitoring System v3.0
+    </div>
+  </div>
+  
+  <script>
+    // Variabel untuk data dan pagination
+    let allData = [];
+    let filteredData = [];
+    let currentPage = 1;
+    let itemsPerPage = 15;
+    let currentSort = { column: 'tanggal', direction: 'desc' };
+    let uniqueProducts = [];
+    let selectedProducts = [];
+    let stockChart = null;
+    let trendChart = null;
+    let chartView = "top5";
+    let lastUpdateInfo = "";
+    let previousStats = {
+      uniqueProducts: 0,
+      totalInbound: 0,
+      totalOutbound: 0,
+      totalStock: 0
+    };
+    
+    // Google Sheet ID and Sheet Name
+    const SHEET_ID = '1zpXbeEdOLVVoDvOuerU3kmz0TcAJpDZOfSECFYffYTw';
+    const SHEET_NAME = 'Sheet1';
+    
+    // Format tanggal dari YYYY-MM-DD ke DD/MM/YYYY
+    function formatDate(dateString) {
+      if (!dateString) return '';
+      
+      const parts = dateString.split('-');
+      if (parts.length !== 3) return dateString;
+      
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    
+    // Parse date from DD/MM/YYYY to YYYY-MM-DD
+    function parseDate(dateString) {
+      if (!dateString) return '';
+      
+      // Check if already in YYYY-MM-DD format
+      if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return dateString;
+      }
+      
+      // Handle DD/MM/YYYY format
+      if (dateString.includes('/')) {
+        const parts = dateString.split('/');
+        if (parts.length === 3) {
+          return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        }
+      }
+      
+      return '';
+    }
+    
+    // Format number with thousand separator
+    function formatNumber(number) {
+      return number.toLocaleString('id-ID');
+    }
+    
+    // Calculate percentage change
+    function calculatePercentageChange(current, previous) {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      return ((current - previous) / previous) * 100;
+    }
+    
+    // Format percentage change with icon
+    function formatPercentageChange(change) {
+      const absChange = Math.abs(change).toFixed(1);
+      if (change > 0) {
+        return `<span class="text-green-600">↑ ${absChange}%</span>`;
+      } else if (change < 0) {
+        return `<span class="text-red-600">↓ ${absChange}%</span>`;
+      } else {
+        return `<span class="text-gray-600">0%</span>`;
+      }
+    }
+    
+    // Fetch data from Google Sheets using public CSV export
+    async function fetchGoogleSheetsData(sheetId, sheetName, filterDate = null) {
+      try {
+        // Use the CSV export URL for public sheets with specific sheet name
+        const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+        
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const csvText = await response.text();
+        console.log("Raw CSV data:", csvText.substring(0, 500)); // Debug: Show first 500 chars of CSV
+        
+        // Extract last update info from first row (A1)
+        const lines = csvText.split('\n');
+        if (lines.length > 0) {
+          const firstLine = lines[0];
+          if (firstLine.startsWith('"Terakhir diperbarui:') || firstLine.includes('diperbarui')) {
+            lastUpdateInfo = firstLine.replace(/"/g, '').trim();
+            // Remove the first line for data processing
+            const dataCSV = lines.slice(1).join('\n');
+            const data = parseCSV(dataCSV, filterDate);
+            return data;
+          } else {
+            console.log("First line doesn't contain update info:", firstLine);
+            const data = parseCSV(csvText, filterDate);
+            return data;
+          }
+        }
+        
+        const data = parseCSV(csvText, filterDate);
+        return data;
+      } catch (error) {
+        console.error('Error fetching data from Google Sheets:', error);
+        showNotification('Error fetching data from Google Sheets: ' + error.message, 'error');
+        return [];
+      }
+    }
+    
+    // Parse CSV data
+    function parseCSV(csvText, filterDate = null) {
+      const lines = csvText.split('\n');
+      if (lines.length < 2) {
+        console.log("Not enough lines in CSV data");
+        return [];
+      }
+      
+      // Find the header row
+      let headerRowIndex = 0;
+      for (let i = 0; i < Math.min(5, lines.length); i++) {
+        if (lines[i].toLowerCase().includes('tanggal') && 
+            lines[i].toLowerCase().includes('inbound') && 
+            lines[i].toLowerCase().includes('outbound')) {
+          headerRowIndex = i;
+          break;
+        }
+      }
+      
+      console.log("Header row found at index:", headerRowIndex);
+      console.log("Header row:", lines[headerRowIndex]);
+      
+      // Skip header row
+      const data = [];
+      
+      for (let i = headerRowIndex + 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        // Split by comma, but handle quoted values
+        const values = [];
+        let inQuotes = false;
+        let currentValue = '';
+        
+        for (let j = 0; j < line.length; j++) {
+          const char = line[j];
+          
+          if (char === '"' && (j === 0 || line[j-1] !== '\\')) {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            values.push(currentValue);
+            currentValue = '';
+          } else {
+            currentValue += char;
+          }
+        }
+        
+        values.push(currentValue); // Add the last value
+        
+        // Clean up quotes
+        const cleanValues = values.map(v => {
+          if (v.startsWith('"') && v.endsWith('"')) {
+            return v.substring(1, v.length - 1);
+          }
+          return v;
+        });
+        
+        if (cleanValues.length < 8) {
+          console.log("Skipping incomplete row:", cleanValues);
+          continue; // Skip incomplete rows
+        }
+        
+        const tanggal = parseDate(cleanValues[0]);
+        
+        const item = {
+          tanggal: tanggal,
+          id: cleanValues[1],
+          nama: cleanValues[2],
+          inboundQty: parseInt(cleanValues[3]) || 0,
+          inboundKg: parseFloat(cleanValues[4]) || 0,
+          outboundQty: parseInt(cleanValues[5]) || 0,
+          outboundKg: parseFloat(cleanValues[6]) || 0,
+          stockQty: parseInt(cleanValues[7]) || 0,
+          stockKg: parseFloat(cleanValues[8]) || 0
+        };
+        
+        // Filter by date if needed
+        if (!filterDate || item.tanggal === filterDate) {
+          data.push(item);
+        }
+      }
+      
+      console.log("Parsed data items:", data.length);
+      return data;
+    }
+    
+    // Fungsi untuk memuat data
+    async function loadData(filterDate = null) {
+      document.getElementById('tableBody').innerHTML = `
+        <tr>
+          <td colspan="10" class="px-6 py-8 text-center text-gray-500">
+            <div class="flex flex-col items-center">
+              <div class="loading-spinner mb-4"></div>
+              <p>Memuat data...</p>
+            </div>
+          </td>
+        </tr>
+      `;
+      
+      document.getElementById('mobileCards').innerHTML = `
+        <div class="flex justify-center items-center py-8">
+          <div class="flex flex-col items-center">
+            <div class="loading-spinner mb-4"></div>
+            <p class="text-gray-500">Memuat data...</p>
+          </div>
+        </div>
+      `;
+      
+      try {
+        // Store previous stats for comparison
+        storePreviousStats();
+        
+        // Fetch data from Google Sheets
+        const sheetData = await fetchGoogleSheetsData(SHEET_ID, SHEET_NAME, filterDate);
+        
+        // Reset data
+        allData = [];
+        uniqueProducts = [];
+        
+        // Process data
+        sheetData.forEach(item => {
+          allData.push({
+            tanggal: item.tanggal,
+            id: item.id,
+            nama: item.nama,
+            inboundQty: item.inboundQty,
+            inboundKg: item.inboundKg,
+            outboundQty: item.outboundQty,
+            outboundKg: item.outboundKg,
+            stockQty: item.stockQty,
+            stockKg: item.stockKg
+          });
+        });
+        
+        // Extract unique products
+        const productMap = new Map();
+        allData.forEach(item => {
+          if (!productMap.has(item.nama)) {
+            productMap.set(item.nama, true);
+            uniqueProducts.push({
+              name: item.nama,
+              id: item.id
+            });
+          }
+        });
+        
+        // Sort products by name
+        uniqueProducts.sort((a, b) => a.name.localeCompare(b.name));
+        
+        // Update product filter
+        updateProductFilter();
+        
+        // Update trend product select
+        updateTrendProductSelect();
+        
+        // Update dashboard summary
+        updateDashboardSummary();
+        
+        // Update charts
+        updateStockChart();
+        updateTrendChart();
+        
+        // Update last refresh time from A1 cell or current time
+        if (lastUpdateInfo) {
+          document.getElementById('updateTime').textContent = lastUpdateInfo.replace('Terakhir diperbarui:', '').trim();
+        } else {
+          document.getElementById('updateTime').textContent = new Date().toLocaleTimeString();
+        }
+        
+        // Apply filters and sort
+        applyFiltersAndSort();
+        
+        showNotification('Data berhasil dimuat', 'success');
+      } catch (error) {
+        console.error('Error loading data:', error);
+        showNotification('Error loading data: ' + error.message, 'error');
+        
+        // Show error in table
+        document.getElementById('tableBody').innerHTML = `
+          <tr>
+            <td colspan="10" class="px-6 py-8 text-center text-red-500">
+              <div class="flex flex-col items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p class="mb-2">Error loading data</p>
+                <p class="text-sm mt-1">Pastikan Sheet1 ada dan dapat diakses</p>
+                <p class="text-sm">${error.message}</p>
+                <p class="text-sm mt-2">Pastikan spreadsheet diatur ke "Anyone with the link can view"</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        
+        document.getElementById('mobileCards').innerHTML = `
+          <div class="flex flex-col items-center py-8 text-center text-red-500">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p class="mb-2">Error loading data</p>
+            <p class="text-sm mt-1">Pastikan Sheet1 ada dan dapat diakses</p>
+            <p class="text-sm">${error.message}</p>
+          </div>
+        `;
+      }
+    }
+    
+    // Store previous stats for comparison
+    function storePreviousStats() {
+      // Count unique products
+      const uniqueProductIds = new Set(allData.map(item => item.id));
+      previousStats.uniqueProducts = uniqueProductIds.size;
+      
+      // Calculate total inbound
+      previousStats.totalInbound = allData.reduce((sum, item) => sum + item.inboundKg, 0);
+      
+      // Calculate total outbound
+      previousStats.totalOutbound = allData.reduce((sum, item) => sum + item.outboundKg, 0);
+      
+      // Get latest stock for each product
+      const latestStockByProduct = {};
+      allData.forEach(item => {
+        if (!latestStockByProduct[item.id] || new Date(item.tanggal) > new Date(latestStockByProduct[item.id].tanggal)) {
+          latestStockByProduct[item.id] = item;
+        }
+      });
+      
+      // Calculate total stock
+      previousStats.totalStock = Object.values(latestStockByProduct).reduce((sum, item) => sum + item.stockKg, 0);
+    }
+    
+    // Update stock chart
+    function updateStockChart() {
+      // Get latest stock for each product
+      const latestStockByProduct = {};
+      allData.forEach(item => {
+        if (!latestStockByProduct[item.id] || new Date(item.tanggal) > new Date(latestStockByProduct[item.id].tanggal)) {
+          latestStockByProduct[item.id] = item;
+        }
+      });
+      
+      let productsToShow = [];
+      const allProducts = Object.values(latestStockByProduct);
+      
+      // Determine which products to show based on chart view
+      if (chartView === "top5") {
+        productsToShow = allProducts.sort((a, b) => b.stockKg - a.stockKg).slice(0, 5);
+      } else if (chartView === "top10") {
+        productsToShow = allProducts.sort((a, b) => b.stockKg - a.stockKg).slice(0, 10);
+      } else if (chartView === "low5") {
+        productsToShow = allProducts.filter(p => p.stockKg > 0).sort((a, b) => a.stockKg - b.stockKg).slice(0, 5);
+      }
+      
+      const labels = productsToShow.map(item => {
+        // Truncate long product names
+        const maxLength = chartView === "top10" ? 15 : 20;
+        return item.nama.length > maxLength ? item.nama.substring(0, maxLength) + '...' : item.nama;
+      });
+      
+      const stockData = productsToShow.map(item => item.stockKg);
+      const inboundData = productsToShow.map(item => item.inboundKg);
+      const outboundData = productsToShow.map(item => item.outboundKg);
+      
+      const ctx = document.getElementById('stockChart').getContext('2d');
+      
+      if (stockChart) {
+        stockChart.destroy();
+      }
+      
+      stockChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Stok (Kg)',
+              data: stockData,
+              backgroundColor: 'rgba(139, 92, 246, 0.7)',
+              borderColor: 'rgba(139, 92, 246, 1)',
+              borderWidth: 1
+            },
+            {
+              label: 'Inbound (Kg)',
+              data: inboundData,
+              backgroundColor: 'rgba(16, 185, 129, 0.7)',
+              borderColor: 'rgba(16, 185, 129, 1)',
+              borderWidth: 1
+            },
+            {
+              label: 'Outbound (Kg)',
+              data: outboundData,
+              backgroundColor: 'rgba(239, 68, 68, 0.7)',
+              borderColor: 'rgba(239, 68, 68, 1)',
+              borderWidth: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Kilogram (Kg)'
+              }
+            },
+            x: {
+              ticks: {
+                maxRotation: 45,
+                minRotation: 45
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              position: 'top',
+            },
+            tooltip: {
+              callbacks: {
+                title: function(context) {
+                  // Show full product name in tooltip
+                  const index = context[0].dataIndex;
+                  return productsToShow[index].nama;
+                },
+                label: function(context) {
+                  return `${context.dataset.label}: ${formatNumber(context.raw)} Kg`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    // Update trend chart
+    function updateTrendChart() {
+      const selectedProduct = document.getElementById('trendProductSelect').value;
+      if (!selectedProduct) return;
+      
+      // Filter data for selected product
+      const productData = allData.filter(item => item.id === selectedProduct);
+      
+      // Sort by date
+      productData.sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
+      
+      // Prepare data for chart
+      const labels = productData.map(item => formatDate(item.tanggal));
+      const stockData = productData.map(item => item.stockKg);
+      const inboundData = productData.map(item => item.inboundKg);
+      const outboundData = productData.map(item => item.outboundKg);
+      
+      const ctx = document.getElementById('trendChart').getContext('2d');
+      
+      if (trendChart) {
+        trendChart.destroy();
+      }
+      
+      trendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Stok (Kg)',
+              data: stockData,
+              backgroundColor: 'rgba(139, 92, 246, 0.2)',
+              borderColor: 'rgba(139, 92, 246, 1)',
+              borderWidth: 2,
+              tension: 0.1,
+              fill: true
+            },
+            {
+              label: 'Inbound (Kg)',
+              data: inboundData,
+              backgroundColor: 'rgba(16, 185, 129, 0)',
+              borderColor: 'rgba(16, 185, 129, 1)',
+              borderWidth: 2,
+              tension: 0.1,
+              pointRadius: 4
+            },
+            {
+              label: 'Outbound (Kg)',
+              data: outboundData,
+              backgroundColor: 'rgba(239, 68, 68, 0)',
+              borderColor: 'rgba(239, 68, 68, 1)',
+              borderWidth: 2,
+              tension: 0.1,
+              pointRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Kilogram (Kg)'
+              }
+            },
+            x: {
+              ticks: {
+                maxRotation: 45,
+                minRotation: 45
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              position: 'top',
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `${context.dataset.label}: ${formatNumber(context.raw)} Kg`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    // Update trend product select
+    function updateTrendProductSelect() {
+      const select = document.getElementById('trendProductSelect');
+      select.innerHTML = '<option value="">Pilih Produk</option>';
+      
+      // Get unique product IDs
+      const uniqueProductIds = new Map();
+      allData.forEach(item => {
+        if (!uniqueProductIds.has(item.id)) {
+          uniqueProductIds.set(item.id, item.nama);
+        }
+      });
+      
+      // Add options to select
+      Array.from(uniqueProductIds.entries()).sort((a, b) => a[1].localeCompare(b[1])).forEach(([id, name]) => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = name;
+        select.appendChild(option);
+      });
+      
+      // Select first product by default
+      if (uniqueProductIds.size > 0) {
+        select.selectedIndex = 1;
+      }
+    }
+    
+    // Show notification
+    function showNotification(message, type = 'info') {
+      const notification = document.getElementById('notification');
+      const notificationMessage = document.getElementById('notification-message');
+      
+      // Set message
+      notificationMessage.textContent = message;
+      
+      // Set type
+      notification.className = 'notification';
+      notification.classList.add(`notification-${type}`);
+      
+      // Set icon
+      const icon = notification.querySelector('.notification-icon svg');
+      if (type === 'success') {
+        icon.innerHTML = `<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />`;
+      } else if (type === 'error') {
+        icon.innerHTML = `<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />`;
+      } else {
+        icon.innerHTML = `<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />`;
+      }
+      
+      // Show notification
+      notification.classList.add('show');
+      
+      // Hide after 3 seconds
+      setTimeout(hideNotification, 3000);
+    }
+    
+    // Hide notification
+    function hideNotification() {
+      const notification = document.getElementById('notification');
+      notification.classList.remove('show');
+    }
+    
+    // Update product filter
+    function updateProductFilter() {
+      const productOptions = document.getElementById('productOptions');
+      productOptions.innerHTML = '';
+      
+      // Add products to dropdown
+      uniqueProducts.forEach(product => {
+        const option = document.createElement('div');
+        option.className = 'multi-select-option';
+        option.innerHTML = `
+          <input type="checkbox" id="product-${product.id}" value="${product.name}" class="product-checkbox">
+          <label for="product-${product.id}">${product.name}</label>
+        `;
+        productOptions.appendChild(option);
+      });
+      
+      // Add event listeners to checkboxes
+      document.querySelectorAll('.product-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+          if (this.checked) {
+            selectedProducts.push(this.value);
+          } else {
+            selectedProducts = selectedProducts.filter(p => p !== this.value);
+          }
+          
+          updateSelectedProductTags();
+          applyFiltersAndSort();
+        });
+      });
+      
+      // Select all checkbox
+      document.getElementById('selectAllProducts').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.product-checkbox');
+        checkboxes.forEach(checkbox => {
+          checkbox.checked = this.checked;
+        });
+        
+        if (this.checked) {
+          selectedProducts = uniqueProducts.map(p => p.name);
+        } else {
+          selectedProducts = [];
+        }
+        
+        updateSelectedProductTags();
+        applyFiltersAndSort();
+      });
+    }
+    
+    // Update selected product tags
+    function updateSelectedProductTags() {
+      const tagsContainer = document.getElementById('selectedProductTags');
+      tagsContainer.innerHTML = '';
+      
+      if (selectedProducts.length === 0) return;
+      
+      selectedProducts.forEach(product => {
+        const tag = document.createElement('div');
+        tag.className = 'multi-select-tag';
+        tag.innerHTML = `
+          ${product}
+          <button type="button" data-product="${product}">×</button>
+        `;
+        tagsContainer.appendChild(tag);
+      });
+      
+      // Add event listeners to remove buttons
+      tagsContainer.querySelectorAll('button').forEach(button => {
+        button.addEventListener('click', function() {
+          const product = this.getAttribute('data-product');
+          selectedProducts = selectedProducts.filter(p => p !== product);
+          
+          // Update checkbox
+          document.querySelectorAll('.product-checkbox').forEach(checkbox => {
+            if (checkbox.value === product) {
+              checkbox.checked = false;
+            }
+          });
+          
+          // Update "Select All" checkbox
+          document.getElementById('selectAllProducts').checked = false;
+          
+          updateSelectedProductTags();
+          applyFiltersAndSort();
+        });
+      });
+    }
+    
+    // Update dashboard summary
+    function updateDashboardSummary() {
+      // Count unique products
+      const uniqueProductIds = new Set(allData.map(item => item.id));
+      const uniqueProductCount = uniqueProductIds.size;
+      document.getElementById('totalProducts').textContent = formatNumber(uniqueProductCount);
+      
+      // Calculate total inbound
+      const totalInbound = allData.reduce((sum, item) => sum + item.inboundKg, 0);
+      document.getElementById('totalInbound').textContent = formatNumber(totalInbound);
+      
+      // Calculate total outbound
+      const totalOutbound = allData.reduce((sum, item) => sum + item.outboundKg, 0);
+      document.getElementById('totalOutbound').textContent = formatNumber(totalOutbound);
+      
+      // Get latest stock for each product
+      const latestStockByProduct = {};
+      allData.forEach(item => {
+        if (!latestStockByProduct[item.id] || new Date(item.tanggal) > new Date(latestStockByProduct[item.id].tanggal)) {
+          latestStockByProduct[item.id] = item;
+        }
+      });
+      
+      // Calculate total stock
+      const totalStock = Object.values(latestStockByProduct).reduce((sum, item) => sum + item.stockKg, 0);
+      document.getElementById('totalStock').textContent = formatNumber(totalStock);
+      
+      // Calculate and display percentage changes
+      const uniqueProductsChange = calculatePercentageChange(uniqueProductCount, previousStats.uniqueProducts);
+      const inboundChange = calculatePercentageChange(totalInbound, previousStats.totalInbound);
+      const outboundChange = calculatePercentageChange(totalOutbound, previousStats.totalOutbound);
+      const stockChange = calculatePercentageChange(totalStock, previousStats.totalStock);
+      
+      document.getElementById('uniqueProductsChange').innerHTML = formatPercentageChange(uniqueProductsChange);
+      document.getElementById('inboundChange').innerHTML = formatPercentageChange(inboundChange);
+      document.getElementById('outboundChange').innerHTML = formatPercentageChange(outboundChange);
+      document.getElementById('stockChange').innerHTML = formatPercentageChange(stockChange);
+    }
+    
+    // Apply filters and sort
+    function applyFiltersAndSort() {
+      const searchTerm = document.getElementById('search').value.toLowerCase();
+      
+      // Filter data
+      filteredData = allData.filter(item => {
+        // Search filter
+        const matchesSearch = 
+          String(item.id).toLowerCase().includes(searchTerm) ||
+          String(item.nama).toLowerCase().includes(searchTerm) ||
+          String(item.tanggal).includes(searchTerm);
+        
+        // Product filter
+        const matchesProduct = selectedProducts.length === 0 || selectedProducts.includes(item.nama);
+        
+        return matchesSearch && matchesProduct;
+      });
+      
+      // Sort data
+      filteredData.sort((a, b) => {
+        const aValue = a[currentSort.column];
+        const bValue = b[currentSort.column];
+        
+        if (currentSort.column === 'tanggal') {
+          // Special handling for dates
+          const dateA = new Date(aValue);
+          const dateB = new Date(bValue);
+          
+          if (currentSort.direction === 'asc') {
+            return dateA - dateB;
+          } else {
+            return dateB - dateA;
+          }
+        } else if (typeof aValue === 'string' && typeof bValue === 'string') {
+          if (currentSort.direction === 'asc') {
+            return aValue.localeCompare(bValue);
+          } else {
+            return bValue.localeCompare(aValue);
+          }
+        } else {
+          if (currentSort.direction === 'asc') {
+            return aValue - bValue;
+          } else {
+            return bValue - aValue;
+          }
+        }
+      });
+      
+      // Reset to first page
+      currentPage = 1;
+      
+      // Render table and pagination
+      renderTable();
+      renderMobileCards();
+      renderPagination();
+      updateTotals();
+    }
+    
+    // Update totals
+    function updateTotals() {
+      // Calculate totals for filtered data
+      const totalInboundQty = filteredData.reduce((sum, item) => sum + item.inboundQty, 0);
+      const totalInboundKg = filteredData.reduce((sum, item) => sum + item.inboundKg, 0);
+      const totalOutboundQty = filteredData.reduce((sum, item) => sum + item.outboundQty, 0);
+      const totalOutboundKg = filteredData.reduce((sum, item) => sum + item.outboundKg, 0);
+      
+      // Get latest stock for each product in filtered data
+      const latestStockByProduct = {};
+      filteredData.forEach(item => {
+        if (!latestStockByProduct[item.id] || new Date(item.tanggal) > new Date(latestStockByProduct[item.id].tanggal)) {
+          latestStockByProduct[item.id] = item;
+        }
+      });
+      
+      // Calculate total stock
+      const totalStockQty = Object.values(latestStockByProduct).reduce((sum, item) => sum + item.stockQty, 0);
+      const totalStockKg = Object.values(latestStockByProduct).reduce((sum, item) => sum + item.stockKg, 0);
+      
+      // Update desktop totals
+      document.getElementById('totalInboundQty').textContent = formatNumber(totalInboundQty);
+      document.getElementById('totalInboundKg').textContent = formatNumber(totalInboundKg);
+      document.getElementById('totalOutboundQty').textContent = formatNumber(totalOutboundQty);
+      document.getElementById('totalOutboundKg').textContent = formatNumber(totalOutboundKg);
+      document.getElementById('totalStockQty').textContent = formatNumber(totalStockQty);
+      document.getElementById('totalStockKg').textContent = formatNumber(totalStockKg);
+      
+      // Update mobile totals
+      document.getElementById('mobileTotalInbound').textContent = `${formatNumber(totalInboundQty)} Qty / ${formatNumber(totalInboundKg)} Kg`;
+      document.getElementById('mobileTotalOutbound').textContent = `${formatNumber(totalOutboundQty)} Qty / ${formatNumber(totalOutboundKg)} Kg`;
+      document.getElementById('mobileTotalStock').textContent = `${formatNumber(totalStockQty)} Qty / ${formatNumber(totalStockKg)} Kg`;
+    }
+    
+    // Get stock status
+    function getStockStatus(item) {
+      if (item.stockKg <= 0) {
+        return { class: 'badge-danger', text: 'Kosong' };
+      } else if (item.stockKg < 100) {
+        return { class: 'badge-warning', text: 'Rendah' };
+      } else {
+        return { class: 'badge-success', text: 'Tersedia' };
+      }
+    }
+    
+    // Render table with current page data (desktop)
+    function renderTable() {
+      const tableBody = document.getElementById('tableBody');
+      
+      if (allData.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="10" class="px-6 py-8 text-center text-gray-500">
+              <div class="flex flex-col items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p class="mb-2">Belum ada data</p>
+                <p class="text-sm">Klik "Refresh Data" untuk memulai</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = Math.min(startIndex + itemsPerPage, filteredData.length);
+      const pageData = filteredData.slice(startIndex, endIndex);
+      
+      if (pageData.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="10" class="px-6 py-4 text-center text-gray-500">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p>Tidak ada data yang ditemukan</p>
+              <p class="text-sm mt-1">Coba ubah filter atau kata kunci pencarian</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      tableBody.innerHTML = '';
+      
+      // Use document fragment for better performance
+      const fragment = document.createDocumentFragment();
+      
+      pageData.forEach((item, index) => {
+        const row = document.createElement('tr');
+        row.className = 'hover-row fade-in';
+        row.style.animationDelay = `${Math.min(index * 30, 500)}ms`; // Cap animation delay
+        
+        const status = getStockStatus(item);
+        
+        row.innerHTML = `
+          <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">${formatDate(item.tanggal)}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">${item.id}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${item.nama}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-700">${formatNumber(item.inboundQty)}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-medium text-green-600">${formatNumber(item.inboundKg)}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-700">${formatNumber(item.outboundQty)}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-medium text-red-600">${formatNumber(item.outboundKg)}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-700">${formatNumber(item.stockQty)}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-medium text-purple-600">${formatNumber(item.stockKg)}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-center">
+            <span class="badge ${status.class}">${status.text}</span>
+          </td>
+        `;
+        
+        fragment.appendChild(row);
+      });
+      
+      tableBody.appendChild(fragment);
+      
+      // Update showing count
+      document.getElementById('showing').textContent = pageData.length;
+      document.getElementById('totalItems').textContent = filteredData.length;
+    }
+    
+    // Render mobile cards
+    function renderMobileCards() {
+      const mobileCards = document.getElementById('mobileCards');
+      
+      if (allData.length === 0) {
+        mobileCards.innerHTML = `
+          <div class="flex flex-col items-center py-8 text-center text-gray-500">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <p class="mb-2">Belum ada data</p>
+            <p class="text-sm">Klik "Refresh Data" untuk memulai</p>
+          </div>
+        `;
+        return;
+      }
+      
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = Math.min(startIndex + itemsPerPage, filteredData.length);
+      const pageData = filteredData.slice(startIndex, endIndex);
+      
+      if (pageData.length === 0) {
+        mobileCards.innerHTML = `
+          <div class="flex flex-col items-center py-8 text-center text-gray-500">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p>Tidak ada data yang ditemukan</p>
+            <p class="text-sm mt-1">Coba ubah filter atau kata kunci pencarian</p>
+          </div>
+        `;
+        return;
+      }
+      
+      mobileCards.innerHTML = '';
+      
+      // Use document fragment for better performance
+      const fragment = document.createDocumentFragment();
+      
+      pageData.forEach((item, index) => {
+        const card = document.createElement('div');
+        card.className = 'mobile-card bg-white border border-gray-200 fade-in';
+        card.style.animationDelay = `${Math.min(index * 30, 500)}ms`; // Cap animation delay
+        
+        const status = getStockStatus(item);
+        
+        card.innerHTML = `
+          <div class="mobile-card-header">
+            <div class="font-medium">${item.nama}</div>
+            <div class="flex items-center">
+              <span class="text-sm text-gray-500 mr-2">${formatDate(item.tanggal)}</span>
+              <span class="badge ${status.class}">${status.text}</span>
+            </div>
+          </div>
+          <div class="mobile-card-body">
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <div class="mobile-card-label">ID</div>
+                <div class="mobile-card-value">${item.id}</div>
+              </div>
+              
+              <div>
+                <div class="mobile-card-label">Stok</div>
+                <div class="mobile-card-value text-purple-600">${formatNumber(item.stockQty)} / ${formatNumber(item.stockKg)} kg</div>
+              </div>
+              
+              <div>
+                <div class="mobile-card-label">Inbound</div>
+                <div class="mobile-card-value text-green-600">${formatNumber(item.inboundQty)} / ${formatNumber(item.inboundKg)} kg</div>
+              </div>
+              
+              <div>
+                <div class="mobile-card-label">Outbound</div>
+                <div class="mobile-card-value text-red-600">${formatNumber(item.outboundQty)} / ${formatNumber(item.outboundKg)} kg</div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        fragment.appendChild(card);
+      });
+      
+      mobileCards.appendChild(fragment);
+      
+      // Update showing count
+      document.getElementById('showing').textContent = pageData.length;
+      document.getElementById('totalItems').textContent = filteredData.length;
+    }
+    
+    // Render pagination
+    function renderPagination() {
+      const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+      const pageNumbers = document.getElementById('pageNumbers');
+      pageNumbers.innerHTML = '';
+      
+      // Previous button
+      document.getElementById('prevPage').disabled = currentPage === 1;
+      
+      // Next button
+      document.getElementById('nextPage').disabled = currentPage === totalPages || totalPages === 0;
+      
+      // Page numbers
+      if (totalPages <= 5) {
+        // Show all pages if 5 or fewer
+        for (let i = 1; i <= totalPages; i++) {
+          addPageButton(i);
+        }
+      } else {
+        // Show limited pages with ellipsis
+        if (currentPage <= 3) {
+          // Near start
+          for (let i = 1; i <= 3; i++) {
+            addPageButton(i);
+          }
+          addEllipsis();
+          addPageButton(totalPages);
+        } else if (currentPage >= totalPages - 2) {
+          // Near end
+          addPageButton(1);
+          addEllipsis();
+          for (let i = totalPages - 2; i <= totalPages; i++) {
+            addPageButton(i);
+          }
+        } else {
+          // Middle
+          addPageButton(1);
+          addEllipsis();
+          addPageButton(currentPage - 1);
+          addPageButton(currentPage);
+          addPageButton(currentPage + 1);
+          addEllipsis();
+          addPageButton(totalPages);
+        }
+      }
+    }
+    
+    // Add page button
+    function addPageButton(pageNum) {
+      const pageNumbers = document.getElementById('pageNumbers');
+      const button = document.createElement('button');
+      button.textContent = pageNum;
+      button.className = pageNum === currentPage 
+        ? 'btn btn-primary btn-sm' 
+        : 'btn btn-outline btn-sm';
+      button.addEventListener('click', () => {
+        currentPage = pageNum;
+        renderTable();
+        renderMobileCards();
+        renderPagination();
+      });
+      pageNumbers.appendChild(button);
+    }
+    
+    // Add ellipsis
+    function addEllipsis() {
+      const pageNumbers = document.getElementById('pageNumbers');
+      const ellipsis = document.createElement('span');
+      ellipsis.textContent = '...';
+      ellipsis.className = 'px-2 py-1 text-gray-500';
+      pageNumbers.appendChild(ellipsis);
+    }
+    
+    // Export data to CSV
+    function exportToCSV() {
+      // Prepare CSV content
+      let csvContent = 'Tanggal,ID,Nama Produk,Inbound (Qty),Inbound (Kg),Outbound (Qty),Outbound (Kg),Stok (Qty),Stok (Kg)\n';
+      
+      filteredData.forEach(item => {
+        csvContent += `${formatDate(item.tanggal)},${item.id},"${item.nama}",${item.inboundQty},${item.inboundKg},${item.outboundQty},${item.outboundKg},${item.stockQty},${item.stockKg}\n`;
+      });
+      
+      // Create download link
+      const encodedUri = encodeURI('data:text/csv;charset=utf-8,' + csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `stok_gim_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      
+      // Trigger download
+      link.click();
+      
+      // Clean up
+      document.body.removeChild(link);
+      
+      showNotification('Data berhasil diekspor ke CSV', 'success');
+    }
+    
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', () => {
+      // Set default date to today
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      document.getElementById('dateFilter').value = `${year}-${month}-${day}`;
+      
+      // Load initial data
+      loadData();
+      
+      // Date filter
+      document.getElementById('dateFilter').addEventListener('change', (e) => {
+        const selectedDate = e.target.value;
+        if (selectedDate) {
+          loadData(selectedDate);
+          showNotification(`Data: ${formatDate(selectedDate)}`, 'info');
+        } else {
+          loadData();
+          showNotification('Semua data', 'info');
+        }
+      });
+      
+      // Refresh button
+      document.getElementById('refreshBtn').addEventListener('click', () => {
+        const dateFilter = document.getElementById('dateFilter').value;
+        loadData(dateFilter);
+        showNotification('Data diperbarui', 'success');
+      });
+      
+      // Export button
+      document.getElementById('exportBtn').addEventListener('click', exportToCSV);
+      
+      // Search input
+      document.getElementById('search').addEventListener('input', applyFiltersAndSort);
+      
+      // Chart view selector
+      document.getElementById('chartView').addEventListener('change', (e) => {
+        chartView = e.target.value;
+        updateStockChart();
+      });
+      
+      // Trend product selector
+      document.getElementById('trendProductSelect').addEventListener('change', updateTrendChart);
+      
+      // Product filter input
+      const productFilterInput = document.getElementById('productFilterInput');
+      const productFilterDropdown = document.getElementById('productFilterDropdown');
+      
+      productFilterInput.addEventListener('focus', () => {
+        productFilterDropdown.classList.add('show');
+      });
+      
+      // Close dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.multi-select')) {
+          productFilterDropdown.classList.remove('show');
+        }
+      });
+      
+      // Pagination buttons
+      document.getElementById('prevPage').addEventListener('click', () => {
+        if (currentPage > 1) {
+          currentPage--;
+          renderTable();
+          renderMobileCards();
+          renderPagination();
+        }
+      });
+      
+      document.getElementById('nextPage').addEventListener('click', () => {
+        const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+        if (currentPage < totalPages) {
+          currentPage++;
+          renderTable();
+          renderMobileCards();
+          renderPagination();
+        }
+      });
+      
+      // Sort headers
+      document.querySelectorAll('th[data-sort]').forEach(header => {
+        header.addEventListener('click', () => {
+          const column = header.getAttribute('data-sort');
+          
+          if (currentSort.column === column) {
+            // Toggle direction
+            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+          } else {
+            // New column, default to ascending
+            currentSort.column = column;
+            currentSort.direction = 'asc';
+          }
+          
+          // Update sort field and direction in UI
+          document.getElementById('sortField').value = column;
+          updateSortDirectionUI();
+          
+          applyFiltersAndSort();
+        });
+      });
+      
+      // Sort field selector
+      document.getElementById('sortField').addEventListener('change', (e) => {
+        currentSort.column = e.target.value;
+        applyFiltersAndSort();
+      });
+      
+      // Sort direction button
+      document.getElementById('sortDirection').addEventListener('click', () => {
+        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+        updateSortDirectionUI();
+        applyFiltersAndSort();
+      });
+      
+      // Update sort direction UI
+      function updateSortDirectionUI() {
+        const ascIcon = document.getElementById('sortAscIcon');
+        const descIcon = document.getElementById('sortDescIcon');
+        
+        if (currentSort.direction === 'asc') {
+          ascIcon.classList.remove('hidden');
+          descIcon.classList.add('hidden');
+        } else {
+          ascIcon.classList.add('hidden');
+          descIcon.classList.remove('hidden');
+        }
+      }
+    });
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'965cb5aa40faea77',t:'MTc1MzYyNTMxNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
