@@ -440,8 +440,9 @@
     <script>
         // Google Sheets configuration
         const SHEET_ID = '1UChSAhNdvwz0KIjJXuNBQoql1VMyUpamlOGlBF1sRCY';
-        const SHEET_NAME = 'DATA';
-        const SHEET_RANGE = 'A:M'; // Include column S for last updated timestamp
+        const SHEET_NAME = 'DATA'; // Using 'DATA' sheet
+        const SHEET_RANGE = 'A:M'; // Include column M for last updated timestamp
+        const LAST_UPDATED_CELL = 'M1'; // Cell containing last updated timestamp
         
         // DOM elements
         const loadingState = document.getElementById('loadingState');
@@ -491,6 +492,19 @@
         };
         let batchAnalysis = {};
         let lastUpdatedTimestamp = "";
+        
+        // Column mapping - adjust these to match your actual column names in the DATA sheet
+        const columnMapping = {
+            'kode': 'Kode Produksi',
+            'nama': 'Nama Udang',
+            'size': 'Size',
+            'packing': 'Packing Style',
+            'brand': 'Brand',
+            'tanggal': 'Tanggal Masuk',
+            'qty': 'Jumlah (Qty)',
+            'kg': 'Jumlah (kg)',
+            'lokasi': 'Lokasi'
+        };
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', () => {
@@ -555,16 +569,18 @@
                         throw new Error('No data found in the spreadsheet');
                     }
                     
+                    // Log the first row to debug column names
+                    console.log("First row data:", parsedData[0]);
+                    
                     inventoryData = parsedData;
                     filteredData = [...inventoryData];
                     
                     // Process production codes
                     processProductionCodes();
                     
-                    // Get last updated timestamp from cell S1 (if available)
+                    // Get last updated timestamp from cell M1
                     fetchLastUpdatedTimestamp();
                     
-                    updateLastUpdated();
                     populateFilters();
                     updateStats();
                     renderTable();
@@ -580,16 +596,34 @@
         }
 
         function fetchLastUpdatedTimestamp() {
-            // Try to get the last updated timestamp from the first row's S column
-            // This assumes the S1 cell contains the last updated timestamp
-            if (inventoryData.length > 0 && inventoryData[0].lastUpdated) {
-                lastUpdatedTimestamp = inventoryData[0].lastUpdated;
-            } else {
-                // Fallback to current time if not available
-                lastUpdatedTimestamp = new Date().toLocaleString();
-            }
+            // Fetch the last updated timestamp from cell M1
+            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}&range=${LAST_UPDATED_CELL}`;
             
-            updateLastUpdated();
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Could not fetch last updated timestamp');
+                    }
+                    return response.text();
+                })
+                .then(csvText => {
+                    // Parse the CSV response to get the timestamp
+                    if (csvText && csvText.trim()) {
+                        // Remove quotes if present
+                        lastUpdatedTimestamp = csvText.replace(/^"|"$/g, '').trim();
+                    } else {
+                        // Fallback to current time if not available
+                        lastUpdatedTimestamp = new Date().toLocaleString();
+                    }
+                    
+                    updateLastUpdated();
+                })
+                .catch(error => {
+                    console.warn('Error fetching last updated timestamp:', error);
+                    // Fallback to current time
+                    lastUpdatedTimestamp = new Date().toLocaleString();
+                    updateLastUpdated();
+                });
         }
 
         function parseCSV(csvText) {
@@ -598,23 +632,18 @@
                 return [];
             }
             
-            const headers = lines[0].split(',').map(header => header.trim());
+            const headers = lines[0].split(',').map(header => {
+                // Remove quotes and trim whitespace
+                return header.replace(/^"|"$/g, '').trim();
+            });
             
-            // Map CSV headers to our internal field names
-            const fieldMap = {
-                'Kode Produksi': 'kode',
-                'Nama Udang': 'nama',
-                'Size': 'size',
-                'Packing Style': 'packing',
-                'Brand': 'brand',
-                'Tanggal Masuk': 'tanggal',
-                'Jumlah (Qty)': 'qty',
-                'Jumlah (kg)': 'kg',
-                'Lokasi': 'lokasi'
-            };
+            console.log("CSV Headers:", headers);
             
-            // Find the index of the last updated cell (column S)
-            const lastUpdatedIndex = headers.length - 1;
+            // Create a reverse mapping from actual headers to our internal field names
+            const headerToField = {};
+            for (const [field, header] of Object.entries(columnMapping)) {
+                headerToField[header.toLowerCase()] = field;
+            }
             
             return lines.slice(1).filter(line => line.trim() !== '').map(line => {
                 // Handle quoted values with commas inside
@@ -645,8 +674,8 @@
                     if (index < values.length) {
                         let value = values[index].replace(/^"|"$/g, '').trim(); // Remove quotes
                         
-                        // Map to our internal field names
-                        const fieldName = fieldMap[header] || header.toLowerCase().replace(/\s+/g, '');
+                        // Find the corresponding internal field name
+                        const fieldName = headerToField[header.toLowerCase()] || header.toLowerCase().replace(/\s+/g, '_');
                         
                         // Convert numeric values
                         if (fieldName === 'qty' || fieldName === 'kg') {
@@ -673,11 +702,6 @@
                         entry[fieldName] = value;
                     }
                 });
-                
-                // Add the last updated timestamp if available
-                if (lastUpdatedIndex < values.length) {
-                    entry.lastUpdated = values[lastUpdatedIndex];
-                }
                 
                 return entry;
             });
@@ -1079,7 +1103,7 @@
         }
 
         function updateLastUpdated() {
-            // Use the timestamp from S1 cell or fallback to current time
+            // Use the timestamp from M1 cell or fallback to current time
             lastUpdated.textContent = `Last updated: ${lastUpdatedTimestamp || new Date().toLocaleString()}`;
         }
 
@@ -1488,5 +1512,5 @@
             dataContainer.classList.remove('hidden');
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9664a9dbc45ea3d9',t:'MTc1MzcwODcxNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9664daac95735f5c',t:'MTc1MzcxMDcxNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
