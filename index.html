@@ -1,2321 +1,1492 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Monitoring Stok GIM v3</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Add jsPDF library for PDF generation -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    
-    :root {
-      --primary-color: #2563eb;
-      --primary-light: #dbeafe;
-      --primary-dark: #1e40af;
-      --success-color: #10b981;
-      --success-light: #d1fae5;
-      --danger-color: #ef4444;
-      --danger-light: #fee2e2;
-      --warning-color: #f59e0b;
-      --warning-light: #fef3c7;
-      --purple-color: #8b5cf6;
-      --purple-light: #ede9fe;
-      --gray-light: #f3f4f6;
-      --gray-medium: #e5e7eb;
-      --gray-dark: #6b7280;
-    }
-    
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #f0f4f8;
-      color: #1f2937;
-    }
-    
-    .fade-in {
-      animation: fadeIn 0.5s ease-in-out;
-    }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    
-    .hover-row:hover {
-      background-color: var(--primary-light);
-      transition: background-color 0.2s;
-    }
-    
-    .loading-spinner {
-      border: 3px solid rgba(0, 0, 0, 0.1);
-      border-top: 3px solid var(--primary-color);
-      border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      animation: spin 1s linear infinite;
-      margin: 0 auto;
-    }
-    
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    
-    .card {
-      background-color: white;
-      border-radius: 0.5rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    
-    .card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    
-    .stat-card {
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .stat-card::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      right: 0;
-      width: 30%;
-      height: 100%;
-      background: linear-gradient(to left, rgba(255,255,255,0.15), rgba(255,255,255,0));
-      transform: skewX(-15deg);
-      pointer-events: none;
-    }
-    
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.5rem 1rem;
-      border-radius: 0.375rem;
-      font-weight: 500;
-      transition: all 0.2s;
-      cursor: pointer;
-    }
-    
-    .btn-primary {
-      background-color: var(--primary-color);
-      color: white;
-    }
-    
-    .btn-primary:hover {
-      background-color: var(--primary-dark);
-    }
-    
-    .btn-outline {
-      border: 1px solid var(--gray-medium);
-      background-color: white;
-    }
-    
-    .btn-outline:hover {
-      background-color: var(--gray-light);
-    }
-    
-    .btn-sm {
-      padding: 0.25rem 0.5rem;
-      font-size: 0.875rem;
-    }
-    
-    .btn-icon {
-      padding: 0.5rem;
-    }
-    
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.125rem 0.5rem;
-      border-radius: 9999px;
-      font-size: 0.75rem;
-      font-weight: 500;
-    }
-    
-    .badge-success {
-      background-color: var(--success-light);
-      color: var(--success-color);
-    }
-    
-    .badge-danger {
-      background-color: var(--danger-light);
-      color: var(--danger-color);
-    }
-    
-    .badge-warning {
-      background-color: var(--warning-light);
-      color: var(--warning-color);
-    }
-    
-    .badge-purple {
-      background-color: var(--purple-light);
-      color: var(--purple-color);
-    }
-    
-    /* Multi-select dropdown */
-    .multi-select {
-      position: relative;
-    }
-    
-    .multi-select-dropdown {
-      max-height: 300px;
-      overflow-y: auto;
-      position: absolute;
-      width: 100%;
-      z-index: 50;
-      background: white;
-      border: 1px solid var(--gray-medium);
-      border-radius: 0.375rem;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-      display: none;
-      top: 100%;
-      margin-top: 0.25rem;
-    }
-    
-    .multi-select-dropdown.show {
-      display: block;
-    }
-    
-    .multi-select-option {
-      padding: 0.5rem 1rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-    }
-    
-    .multi-select-option:hover {
-      background-color: var(--gray-light);
-    }
-    
-    .multi-select-option.selected {
-      background-color: var(--primary-light);
-    }
-    
-    .multi-select-option input[type="checkbox"] {
-      margin-right: 0.5rem;
-    }
-    
-    .multi-select-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.25rem;
-      margin-top: 0.5rem;
-    }
-    
-    .multi-select-tag {
-      display: inline-flex;
-      align-items: center;
-      background-color: var(--primary-light);
-      color: var(--primary-color);
-      padding: 0.125rem 0.5rem;
-      border-radius: 9999px;
-      font-size: 0.75rem;
-      font-weight: 500;
-    }
-    
-    .multi-select-tag button {
-      margin-left: 0.25rem;
-      color: var(--primary-color);
-      font-size: 1rem;
-      line-height: 1;
-      padding: 0;
-      background: none;
-      border: none;
-      cursor: pointer;
-    }
-    
-    /* Mobile optimizations */
-    @media (max-width: 768px) {
-      .mobile-card {
-        border-radius: 0.5rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        margin-bottom: 0.75rem;
-      }
-      
-      .mobile-card-header {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.75rem;
-        border-bottom: 1px solid var(--gray-medium);
-        background-color: var(--gray-light);
-        border-top-left-radius: 0.5rem;
-        border-top-right-radius: 0.5rem;
-      }
-      
-      .mobile-card-body {
-        padding: 0.75rem;
-      }
-      
-      .mobile-card-row {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 0.5rem;
-      }
-      
-      .mobile-card-label {
-        color: var(--gray-dark);
-        font-size: 0.875rem;
-      }
-      
-      .mobile-card-value {
-        font-weight: 500;
-        text-align: right;
-      }
-    }
-    
-    /* Tooltip */
-    .tooltip {
-      position: relative;
-      display: inline-block;
-    }
-    
-    .tooltip .tooltip-text {
-      visibility: hidden;
-      width: 200px;
-      background-color: #333;
-      color: #fff;
-      text-align: center;
-      border-radius: 6px;
-      padding: 5px;
-      position: absolute;
-      z-index: 1;
-      bottom: 125%;
-      left: 50%;
-      transform: translateX(-50%);
-      opacity: 0;
-      transition: opacity 0.3s;
-      font-size: 0.75rem;
-    }
-    
-    .tooltip:hover .tooltip-text {
-      visibility: visible;
-      opacity: 1;
-    }
-    
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-    
-    ::-webkit-scrollbar-track {
-      background: #f1f1f1;
-      border-radius: 4px;
-    }
-    
-    ::-webkit-scrollbar-thumb {
-      background: #c1c1c1;
-      border-radius: 4px;
-    }
-    
-    ::-webkit-scrollbar-thumb:hover {
-      background: #a1a1a1;
-    }
-    
-    /* Notification */
-    .notification {
-      position: fixed;
-      top: 1rem;
-      right: 1rem;
-      padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      color: white;
-      display: flex;
-      align-items: center;
-      z-index: 100;
-      transform: translateY(-100%);
-      opacity: 0;
-      transition: transform 0.3s, opacity 0.3s;
-    }
-    
-    .notification.show {
-      transform: translateY(0);
-      opacity: 1;
-    }
-    
-    .notification-success {
-      background-color: var(--success-color);
-    }
-    
-    .notification-error {
-      background-color: var(--danger-color);
-    }
-    
-    .notification-info {
-      background-color: var(--primary-color);
-    }
-    
-    .notification-icon {
-      margin-right: 0.5rem;
-    }
-    
-    .notification-message {
-      flex: 1;
-    }
-    
-    .notification-close {
-      margin-left: 0.5rem;
-      cursor: pointer;
-      opacity: 0.7;
-    }
-    
-    .notification-close:hover {
-      opacity: 1;
-    }
-    
-    /* PDF Export Modal */
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .modal.show {
-      display: flex;
-    }
-    
-    .modal-content {
-      background-color: white;
-      border-radius: 0.5rem;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      width: 90%;
-      max-width: 500px;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-    
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem;
-      border-bottom: 1px solid var(--gray-medium);
-    }
-    
-    .modal-body {
-      padding: 1rem;
-    }
-    
-    .modal-footer {
-      display: flex;
-      justify-content: flex-end;
-      padding: 1rem;
-      border-top: 1px solid var(--gray-medium);
-      gap: 0.5rem;
-    }
-    
-    .modal-close {
-      cursor: pointer;
-      font-size: 1.5rem;
-      line-height: 1;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShrimpStock View</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@tailwindcss/typography@0.5.0/dist/typography.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f7ff;
+        }
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        th {
+            position: sticky;
+            top: 0;
+            background-color: #0f5e9c;
+            color: white;
+            font-weight: 600;
+            text-align: left;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        th:hover {
+            background-color: #0c4d82;
+        }
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        tr:hover {
+            background-color: #e6f7ff;
+        }
+        .sort-icon {
+            margin-left: 5px;
+        }
+        .search-container {
+            position: relative;
+        }
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+        }
+        .search-input {
+            padding-left: 40px;
+        }
+        .filter-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .filter-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 200px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            border-radius: 6px;
+            padding: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .filter-dropdown:hover .filter-content {
+            display: block;
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #0f5e9c;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-blue {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        .badge-green {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        .badge-yellow {
+            background-color: #fef9c3;
+            color: #854d0e;
+        }
+        .badge-red {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .badge-purple {
+            background-color: #f3e8ff;
+            color: #6b21a8;
+        }
+        .badge-orange {
+            background-color: #ffedd5;
+            color: #9a3412;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        .batch-group {
+            background-color: #f0f9ff;
+            border-left: 3px solid #0369a1;
+        }
+        .tab-button {
+            padding: 8px 16px;
+            border-radius: 8px 8px 0 0;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .tab-button.active {
+            background-color: white;
+            border-bottom: 2px solid #0f5e9c;
+            color: #0f5e9c;
+            font-weight: 600;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
 </head>
-<body class="p-2 md:p-6">
-  <!-- Notification container -->
-  <div id="notification" class="notification">
-    <span class="notification-icon">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-      </svg>
-    </span>
-    <span id="notification-message" class="notification-message">Notification message</span>
-    <span class="notification-close" onclick="hideNotification()">×</span>
-  </div>
-  
-  <!-- PDF Export Modal -->
-  <div id="pdfModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 class="text-lg font-medium">Export PDF</h3>
-        <span class="modal-close" onclick="closePdfModal()">&times;</span>
-      </div>
-      <div class="modal-body">
-        <div class="mb-4">
-          <label for="pdfTitle" class="block text-sm font-medium text-gray-700 mb-1">Judul Laporan</label>
-          <input type="text" id="pdfTitle" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 focus:outline-none" value="Laporan Stok GIM">
-        </div>
-        
-        <div class="mb-4">
-          <label for="pdfSubtitle" class="block text-sm font-medium text-gray-700 mb-1">Subjudul</label>
-          <input type="text" id="pdfSubtitle" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 focus:outline-none" value="MUID PPIC">
-        </div>
-        
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Konten</label>
-          <div class="space-y-2">
-            <div class="flex items-center">
-              <input type="checkbox" id="includeSummary" class="mr-2" checked>
-              <label for="includeSummary">Ringkasan</label>
-            </div>
-            <div class="flex items-center">
-              <input type="checkbox" id="includeChart" class="mr-2" checked>
-              <label for="includeChart">Grafik</label>
-            </div>
-            <div class="flex items-center">
-              <input type="checkbox" id="includeTable" class="mr-2" checked>
-              <label for="includeTable">Tabel Data</label>
-            </div>
-          </div>
-        </div>
-        
-        <div class="mb-4">
-          <label for="pdfOrientation" class="block text-sm font-medium text-gray-700 mb-1">Orientasi</label>
-          <select id="pdfOrientation" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
-            <option value="portrait">Portrait</option>
-            <option value="landscape" selected>Landscape</option>
-          </select>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline" onclick="closePdfModal()">Batal</button>
-        <button id="generatePdfBtn" class="btn btn-primary">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          Generate PDF
-        </button>
-      </div>
-    </div>
-  </div>
-  
-  <div class="max-w-7xl mx-auto">
-    <!-- Header -->
-    <div class="bg-white rounded-xl shadow-md overflow-hidden mb-6">
-      <div class="bg-gradient-to-r from-blue-600 to-blue-800 p-4 md:p-6">
-        <div class="flex flex-col md:flex-row justify-between items-center">
-          <div class="flex items-center mb-4 md:mb-0">
-            <div class="bg-white p-2 rounded-lg shadow-md mr-4">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-              </svg>
-            </div>
-            <div>
-              <h1 class="text-xl md:text-2xl font-bold text-white">Monitoring Stok GIM</h1>
-              <p class="text-blue-100 text-sm">MUID PPIC - Versi 3.0</p>
-            </div>
-          </div>
-          <div class="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-2 w-full md:w-auto">
-            <div class="relative w-full md:w-auto">
-              <input type="date" id="dateFilter" class="bg-white text-gray-700 px-4 py-2 rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-blue-500 w-full">
-            </div>
-            <button id="refreshBtn" class="btn btn-primary w-full md:w-auto">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Refresh Data
-            </button>
-            <button id="exportBtn" class="btn btn-outline w-full md:w-auto">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 3v4a1 1 0 001 1h4" />
-              </svg>
-              Export PDF
-            </button>
-          </div>
-        </div>
-        <div id="lastUpdate" class="text-blue-100 text-sm mt-2 text-center md:text-right">
-          Terakhir diperbarui: <span id="updateTime">-</span>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Dashboard Summary -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6">
-      <div class="stat-card card p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-l-4 border-blue-500">
-        <div class="flex justify-between items-center">
-          <div>
-            <p class="text-gray-500 text-xs md:text-sm">Total Produk</p>
-            <h3 id="totalProducts" class="text-lg md:text-2xl font-bold">-</h3>
-          </div>
-          <div class="bg-blue-500 text-white p-2 md:p-3 rounded-full">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
-            </svg>
-          </div>
-        </div>
-        <div class="mt-2 text-xs text-gray-500">
-          <span id="uniqueProductsChange" class="font-medium"></span>
-        </div>
-      </div>
-      
-      <div class="stat-card card p-4 bg-gradient-to-br from-green-50 to-green-100 border-l-4 border-green-500">
-        <div class="flex justify-between items-center">
-          <div>
-            <p class="text-gray-500 text-xs md:text-sm">Total Inbound (Kg)</p>
-            <h3 id="totalInbound" class="text-lg md:text-2xl font-bold">-</h3>
-          </div>
-          <div class="bg-green-500 text-white p-2 md:p-3 rounded-full">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
-            </svg>
-          </div>
-        </div>
-        <div class="mt-2 text-xs text-gray-500">
-          <span id="inboundChange" class="font-medium"></span>
-        </div>
-      </div>
-      
-      <div class="stat-card card p-4 bg-gradient-to-br from-red-50 to-red-100 border-l-4 border-red-500">
-        <div class="flex justify-between items-center">
-          <div>
-            <p class="text-gray-500 text-xs md:text-sm">Total Outbound (Kg)</p>
-            <h3 id="totalOutbound" class="text-lg md:text-2xl font-bold">-</h3>
-          </div>
-          <div class="bg-red-500 text-white p-2 md:p-3 rounded-full">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
-            </svg>
-          </div>
-        </div>
-        <div class="mt-2 text-xs text-gray-500">
-          <span id="outboundChange" class="font-medium"></span>
-        </div>
-      </div>
-      
-      <div class="stat-card card p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-l-4 border-purple-500">
-        <div class="flex justify-between items-center">
-          <div>
-            <p class="text-gray-500 text-xs md:text-sm">Total Stok (Kg)</p>
-            <h3 id="totalStock" class="text-lg md:text-2xl font-bold">-</h3>
-          </div>
-          <div class="bg-purple-500 text-white p-2 md:p-3 rounded-full">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-          </div>
-        </div>
-        <div class="mt-2 text-xs text-gray-500">
-          <span id="stockChange" class="font-medium"></span>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Chart Section -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-      <div class="card p-4">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
-          <h3 class="text-lg font-medium text-gray-700">Ringkasan Stok (Kg)</h3>
-          <div class="mt-2 md:mt-0">
-            <select id="chartView" class="bg-white border border-gray-300 text-gray-700 rounded-lg px-3 py-1 text-sm focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
-              <option value="top5">Top 5 Produk</option>
-              <option value="top10">Top 10 Produk</option>
-              <option value="low5">5 Produk Terendah</option>
-            </select>
-          </div>
-        </div>
-        <div class="h-64">
-          <canvas id="stockChart"></canvas>
-        </div>
-      </div>
-      
-      <div class="card p-4">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
-          <h3 class="text-lg font-medium text-gray-700">Trend Produk</h3>
-          <div class="mt-2 md:mt-0">
-            <select id="trendProductSelect" class="bg-white border border-gray-300 text-gray-700 rounded-lg px-3 py-1 text-sm focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
-              <!-- Product options will be inserted here -->
-            </select>
-          </div>
-        </div>
-        <div class="h-64">
-          <canvas id="trendChart"></canvas>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Search and Filter -->
-    <div class="card p-4 mb-6">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-          <input type="text" id="search" placeholder="Cari produk atau tanggal..." 
-                 class="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
-        </div>
-        
-        <div class="multi-select">
-          <div class="relative">
-            <input type="text" id="productFilterInput" placeholder="Pilih produk..." 
-                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
-            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-          </div>
-          <div id="productFilterDropdown" class="multi-select-dropdown">
-            <div class="p-2 border-b border-gray-200">
-              <label class="flex items-center">
-                <input type="checkbox" id="selectAllProducts" class="mr-2">
-                <span>Pilih Semua</span>
-              </label>
-            </div>
-            <div id="productOptions">
-              <!-- Product options will be inserted here -->
-            </div>
-          </div>
-          <div id="selectedProductTags" class="multi-select-tags">
-            <!-- Selected product tags will be inserted here -->
-          </div>
-        </div>
-        
-        <div class="flex space-x-2">
-          <div class="relative flex-1">
-            <select id="sortField" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
-              <option value="tanggal">Tanggal</option>
-              <option value="id">ID</option>
-              <option value="nama">Nama Produk</option>
-              <option value="inboundKg">Inbound (Kg)</option>
-              <option value="outboundKg">Outbound (Kg)</option>
-              <option value="stockKg">Stok (Kg)</option>
-            </select>
-          </div>
-          <button id="sortDirection" class="btn btn-outline btn-icon">
-            <svg id="sortAscIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
-            </svg>
-            <svg id="sortDescIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
-            </svg>
-          </button>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Table (Desktop) -->
-    <div class="card mb-6">
-      <div class="hidden md:block overflow-x-auto">
-        <table id="stockTable" class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-sort="tanggal">
-                Tanggal
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                </svg>
-              </th>
-              <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-sort="id">
-                ID
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                </svg>
-              </th>
-              <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-sort="nama">
-                Nama Produk
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                </svg>
-              </th>
-              <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-sort="inboundQty">
-                Inbound (Qty)
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                </svg>
-              </th>
-              <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-sort="inboundKg">
-                Inbound (Kg)
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                </svg>
-              </th>
-              <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-sort="outboundQty">
-                Outbound (Qty)
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                </svg>
-              </th>
-              <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-sort="outboundKg">
-                Outbound (Kg)
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                </svg>
-              </th>
-              <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-sort="stockQty">
-                Stok (Qty)
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                </svg>
-              </th>
-              <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" data-sort="stockKg">
-                Stok (Kg)
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                </svg>
-              </th>
-              <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200" id="tableBody">
-            <tr>
-              <td colspan="10" class="px-6 py-8 text-center text-gray-500">
-                <div class="flex flex-col items-center">
-                  <div class="loading-spinner mb-4"></div>
-                  <p>Memuat data...</p>
+<body>
+    <div class="min-h-screen">
+        <header class="bg-gradient-to-r from-blue-800 to-blue-600 text-white shadow-lg">
+            <div class="container mx-auto px-4 py-6">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
+                            <path d="M14 9l-5 5-2-2"/>
+                        </svg>
+                        <h1 class="text-2xl md:text-3xl font-bold">ShrimpStock View</h1>
+                    </div>
+                    <div class="text-sm md:text-base">
+                        <span id="lastUpdated" class="opacity-80">Last updated: Loading...</span>
+                    </div>
                 </div>
-              </td>
-            </tr>
-          </tbody>
-          <tfoot class="bg-gray-50">
-            <tr>
-              <td colspan="3" class="px-4 py-3 text-left text-sm font-medium text-gray-900">Total</td>
-              <td id="totalInboundQty" class="px-4 py-3 text-center text-sm font-medium text-gray-900">-</td>
-              <td id="totalInboundKg" class="px-4 py-3 text-center text-sm font-medium text-green-600">-</td>
-              <td id="totalOutboundQty" class="px-4 py-3 text-center text-sm font-medium text-gray-900">-</td>
-              <td id="totalOutboundKg" class="px-4 py-3 text-center text-sm font-medium text-red-600">-</td>
-              <td id="totalStockQty" class="px-4 py-3 text-center text-sm font-medium text-gray-900">-</td>
-              <td id="totalStockKg" class="px-4 py-3 text-center text-sm font-medium text-purple-600">-</td>
-              <td class="px-4 py-3 text-center text-sm font-medium text-gray-900">-</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-      
-      <!-- Mobile Cards -->
-      <div id="mobileCards" class="md:hidden p-4">
-        <div class="flex justify-center items-center py-8">
-          <div class="flex flex-col items-center">
-            <div class="loading-spinner mb-4"></div>
-            <p class="text-gray-500">Memuat data...</p>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Mobile Totals -->
-      <div class="md:hidden p-4 bg-gray-50 rounded-lg border-t border-gray-200">
-        <h4 class="text-sm font-medium text-gray-700 mb-2">Total</h4>
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <p class="text-xs text-gray-500">Inbound</p>
-            <p id="mobileTotalInbound" class="font-medium text-green-600">- Qty / - Kg</p>
-          </div>
-          <div>
-            <p class="text-xs text-gray-500">Outbound</p>
-            <p id="mobileTotalOutbound" class="font-medium text-red-600">- Qty / - Kg</p>
-          </div>
-          <div>
-            <p class="text-xs text-gray-500">Stok</p>
-            <p id="mobileTotalStock" class="font-medium text-purple-600">- Qty / - Kg</p>
-          </div>
-        </div>
-      </div>
+            </div>
+        </header>
+
+        <main class="container mx-auto px-4 py-8">
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <!-- Tab Navigation -->
+                <div class="flex border-b border-gray-200 mb-6">
+                    <button id="tabInventory" class="tab-button active">Inventory View</button>
+                    <button id="tabBatch" class="tab-button">Batch Analysis</button>
+                    <button id="tabStats" class="tab-button">Statistics</button>
+                </div>
+                
+                <!-- Inventory Tab Content -->
+                <div id="inventoryContent" class="tab-content active">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 space-y-4 md:space-y-0">
+                        <div class="search-container w-full md:w-96">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" id="searchInput" placeholder="Search anything..." class="search-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        
+                        <div class="flex flex-wrap items-center gap-3">
+                            <div class="filter-dropdown">
+                                <button class="flex items-center space-x-1 bg-blue-50 hover:bg-blue-100 text-blue-800 px-4 py-2 rounded-lg transition">
+                                    <i class="fas fa-filter"></i>
+                                    <span>Filter</span>
+                                </button>
+                                <div class="filter-content right-0">
+                                    <div class="p-2">
+                                        <h3 class="font-semibold mb-2">Production Code</h3>
+                                        <div id="batchFilters" class="space-y-1">
+                                            <!-- Will be populated dynamically -->
+                                        </div>
+                                    </div>
+                                    <div class="p-2 border-t">
+                                        <h3 class="font-semibold mb-2">Size</h3>
+                                        <div id="sizeFilters" class="space-y-1">
+                                            <!-- Will be populated dynamically -->
+                                        </div>
+                                    </div>
+                                    <div class="p-2 border-t">
+                                        <h3 class="font-semibold mb-2">Packing Style</h3>
+                                        <div id="packingFilters" class="space-y-1">
+                                            <!-- Will be populated dynamically -->
+                                        </div>
+                                    </div>
+                                    <div class="p-2 border-t">
+                                        <h3 class="font-semibold mb-2">Location</h3>
+                                        <div id="locationFilters" class="space-y-1">
+                                            <!-- Will be populated dynamically -->
+                                        </div>
+                                    </div>
+                                    <div class="p-2 border-t">
+                                        <h3 class="font-semibold mb-2">Brand</h3>
+                                        <div id="brandFilters" class="space-y-1">
+                                            <!-- Will be populated dynamically -->
+                                        </div>
+                                    </div>
+                                    <div class="p-2 border-t">
+                                        <button id="clearFilters" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-1 rounded text-sm">
+                                            Clear All Filters
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button id="exportPdf" class="flex items-center space-x-1 bg-green-50 hover:bg-green-100 text-green-800 px-4 py-2 rounded-lg transition">
+                                <i class="fas fa-file-pdf"></i>
+                                <span>Export PDF</span>
+                            </button>
+                            
+                            <button id="refreshData" class="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
+                                <i class="fas fa-sync-alt"></i>
+                                <span>Refresh</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="statsBar" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                        <div class="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                            <h3 class="text-blue-800 text-sm font-medium">Total Products</h3>
+                            <p id="totalProducts" class="text-2xl font-bold text-blue-900">-</p>
+                        </div>
+                        <div class="bg-green-50 rounded-lg p-4 border border-green-100">
+                            <h3 class="text-green-800 text-sm font-medium">Total Quantity</h3>
+                            <p id="totalQuantity" class="text-2xl font-bold text-green-900">-</p>
+                        </div>
+                        <div class="bg-yellow-50 rounded-lg p-4 border border-yellow-100">
+                            <h3 class="text-yellow-800 text-sm font-medium">Total Weight (kg)</h3>
+                            <p id="totalWeight" class="text-2xl font-bold text-yellow-900">-</p>
+                        </div>
+                        <div class="bg-purple-50 rounded-lg p-4 border border-purple-100">
+                            <h3 class="text-purple-800 text-sm font-medium">Unique Batches</h3>
+                            <p id="uniqueBatches" class="text-2xl font-bold text-purple-900">-</p>
+                        </div>
+                        <div class="bg-orange-50 rounded-lg p-4 border border-orange-100">
+                            <h3 class="text-orange-800 text-sm font-medium">Unique Brands</h3>
+                            <p id="uniqueBrands" class="text-2xl font-bold text-orange-900">-</p>
+                        </div>
+                    </div>
+
+                    <div id="loadingState" class="flex flex-col items-center justify-center py-12">
+                        <div class="loading-spinner mb-4"></div>
+                        <p class="text-gray-600">Loading inventory data...</p>
+                    </div>
+
+                    <div id="errorState" class="hidden bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                        <svg class="mx-auto h-12 w-12 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h3 class="mt-2 text-lg font-medium text-red-800">Unable to load data</h3>
+                        <p class="mt-1 text-red-600" id="errorMessage">Please check your connection and try again.</p>
+                        <button id="retryButton" class="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition">
+                            Try Again
+                        </button>
+                    </div>
+
+                    <div id="dataContainer" class="hidden">
+                        <div class="table-container">
+                            <table id="inventoryTable" class="min-w-full">
+                                <thead>
+                                    <tr>
+                                        <th data-sort="kode">Kode Produksi <span class="sort-icon">↕</span></th>
+                                        <th data-sort="nama">Nama Udang <span class="sort-icon">↕</span></th>
+                                        <th data-sort="size">Size <span class="sort-icon">↕</span></th>
+                                        <th data-sort="packing">Packing Style <span class="sort-icon">↕</span></th>
+                                        <th data-sort="brand">Brand <span class="sort-icon">↕</span></th>
+                                        <th data-sort="tanggal">Tanggal Masuk <span class="sort-icon">↕</span></th>
+                                        <th data-sort="qty">Jumlah (Qty) <span class="sort-icon">↕</span></th>
+                                        <th data-sort="kg">Jumlah (kg) <span class="sort-icon">↕</span></th>
+                                        <th data-sort="lokasi">Lokasi <span class="sort-icon">↕</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="mt-4 text-center text-gray-500 text-sm">
+                            <p id="resultCount">Showing 0 of 0 items</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Batch Analysis Tab Content -->
+                <div id="batchContent" class="tab-content">
+                    <div class="mb-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-2">Production Batch Analysis</h2>
+                        <p class="text-gray-600">Analyze inventory by production batch codes</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-white rounded-lg border border-gray-200 p-4">
+                            <h3 class="font-semibold text-gray-800 mb-3">Batch Distribution</h3>
+                            <div id="batchChart" class="h-64 flex items-center justify-center">
+                                <p class="text-gray-500">Loading batch data...</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg border border-gray-200 p-4">
+                            <h3 class="font-semibold text-gray-800 mb-3">Production Timeline</h3>
+                            <div id="timelineChart" class="h-64 flex items-center justify-center">
+                                <p class="text-gray-500">Loading timeline data...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg border border-gray-200 p-4">
+                        <h3 class="font-semibold text-gray-800 mb-3">Batch Details</h3>
+                        <div class="overflow-x-auto">
+                            <table id="batchTable" class="min-w-full">
+                                <thead>
+                                    <tr>
+                                        <th class="px-4 py-2 bg-gray-100">Batch Prefix</th>
+                                        <th class="px-4 py-2 bg-gray-100">Products</th>
+                                        <th class="px-4 py-2 bg-gray-100">Total Qty</th>
+                                        <th class="px-4 py-2 bg-gray-100">Total Weight (kg)</th>
+                                        <th class="px-4 py-2 bg-gray-100">First Entry</th>
+                                        <th class="px-4 py-2 bg-gray-100">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="batchTableBody">
+                                    <!-- Batch data will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Statistics Tab Content -->
+                <div id="statsContent" class="tab-content">
+                    <div class="mb-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-2">Inventory Statistics</h2>
+                        <p class="text-gray-600">Detailed analysis of your shrimp inventory</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-white rounded-lg border border-gray-200 p-4">
+                            <h3 class="font-semibold text-gray-800 mb-3">Inventory by Shrimp Type</h3>
+                            <div id="shrimpTypeChart" class="h-64 flex items-center justify-center">
+                                <p class="text-gray-500">Loading chart data...</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg border border-gray-200 p-4">
+                            <h3 class="font-semibold text-gray-800 mb-3">Inventory by Size</h3>
+                            <div id="sizeChart" class="h-64 flex items-center justify-center">
+                                <p class="text-gray-500">Loading chart data...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-white rounded-lg border border-gray-200 p-4">
+                            <h3 class="font-semibold text-gray-800 mb-3">Storage Location Distribution</h3>
+                            <div id="locationChart" class="h-64 flex items-center justify-center">
+                                <p class="text-gray-500">Loading chart data...</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg border border-gray-200 p-4">
+                            <h3 class="font-semibold text-gray-800 mb-3">Packing Style Distribution</h3>
+                            <div id="packingChart" class="h-64 flex items-center justify-center">
+                                <p class="text-gray-500">Loading chart data...</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg border border-gray-200 p-4">
+                            <h3 class="font-semibold text-gray-800 mb-3">Brand Distribution</h3>
+                            <div id="brandChart" class="h-64 flex items-center justify-center">
+                                <p class="text-gray-500">Loading chart data...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="bg-gray-800 text-white py-6">
+            <div class="container mx-auto px-4 text-center">
+                <p>© 2023 ShrimpStock View - Inventory Monitoring System</p>
+                <p class="text-gray-400 text-sm mt-2">Data is read-only and synchronized with Google Sheets</p>
+            </div>
+        </footer>
     </div>
-    
-    <!-- Pagination -->
-    <div class="card p-4 mb-6">
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-3 md:space-y-0">
-        <div class="text-sm text-gray-500 text-center md:text-left">
-          Menampilkan <span id="showing">0</span> dari <span id="totalItems">0</span> item
-        </div>
-        <div class="flex justify-center md:justify-end space-x-2">
-          <button id="prevPage" class="btn btn-outline btn-sm disabled:opacity-50 disabled:cursor-not-allowed">
-            &laquo;
-          </button>
-          <div id="pageNumbers" class="flex space-x-1">
-            <!-- Page numbers will be inserted here -->
-          </div>
-          <button id="nextPage" class="btn btn-outline btn-sm disabled:opacity-50 disabled:cursor-not-allowed">
-            &raquo;
-          </button>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Footer -->
-    <div class="text-center text-gray-500 text-sm py-4">
-      &copy; 2023 GIM Warehouse Monitoring System v3.0
-    </div>
-  </div>
-  
-  <script>
-    // Initialize jsPDF
-    const { jsPDF } = window.jspdf;
-    
-    // Variabel untuk data dan pagination
-    let allData = [];
-    let filteredData = [];
-    let currentPage = 1;
-    let itemsPerPage = 15;
-    let currentSort = { column: 'tanggal', direction: 'desc' };
-    let uniqueProducts = [];
-    let selectedProducts = [];
-    let stockChart = null;
-    let trendChart = null;
-    let chartView = "top5";
-    let lastUpdateInfo = "";
-    let previousStats = {
-      uniqueProducts: 0,
-      totalInbound: 0,
-      totalOutbound: 0,
-      totalStock: 0
-    };
-    
-    // Google Sheet ID and Sheet Name
-    const SHEET_ID = '1zpXbeEdOLVVoDvOuerU3kmz0TcAJpDZOfSECFYffYTw';
-    const SHEET_NAME = 'Sheet1';
-    
-    // Format tanggal dari YYYY-MM-DD ke DD/MM/YYYY
-    function formatDate(dateString) {
-      if (!dateString) return '';
-      
-      const parts = dateString.split('-');
-      if (parts.length !== 3) return dateString;
-      
-      return `${parts[2]}/${parts[1]}/${parts[0]}`;
-    }
-    
-    // Parse date from DD/MM/YYYY to YYYY-MM-DD
-    function parseDate(dateString) {
-      if (!dateString) return '';
-      
-      // Check if already in YYYY-MM-DD format
-      if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        return dateString;
-      }
-      
-      // Handle DD/MM/YYYY format
-      if (dateString.includes('/')) {
-        const parts = dateString.split('/');
-        if (parts.length === 3) {
-          return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-        }
-      }
-      
-      return '';
-    }
-    
-    // Format number with thousand separator
-    function formatNumber(number) {
-      return number.toLocaleString('id-ID');
-    }
-    
-    // Calculate percentage change
-    function calculatePercentageChange(current, previous) {
-      if (previous === 0) return current > 0 ? 100 : 0;
-      return ((current - previous) / previous) * 100;
-    }
-    
-    // Format percentage change with icon
-    function formatPercentageChange(change) {
-      const absChange = Math.abs(change).toFixed(1);
-      if (change > 0) {
-        return `<span class="text-green-600">↑ ${absChange}%</span>`;
-      } else if (change < 0) {
-        return `<span class="text-red-600">↓ ${absChange}%</span>`;
-      } else {
-        return `<span class="text-gray-600">0%</span>`;
-      }
-    }
-    
-    // Fetch data from Google Sheets using public CSV export
-    async function fetchGoogleSheetsData(sheetId, sheetName) {
-      try {
-        // Use the CSV export URL for public sheets with specific sheet name
-        const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+
+    <script>
+        // Google Sheets configuration
+        const SHEET_ID = '1UChSAhNdvwz0KIjJXuNBQoql1VMyUpamlOGlBF1sRCY';
+        const SHEET_NAME = 'DATA';
+        const SHEET_RANGE = 'A:L'; // Include column S for last updated timestamp
         
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        // DOM elements
+        const loadingState = document.getElementById('loadingState');
+        const errorState = document.getElementById('errorState');
+        const dataContainer = document.getElementById('dataContainer');
+        const inventoryTable = document.getElementById('inventoryTable');
+        const searchInput = document.getElementById('searchInput');
+        const resultCount = document.getElementById('resultCount');
+        const lastUpdated = document.getElementById('lastUpdated');
+        const exportPdfBtn = document.getElementById('exportPdf');
+        const refreshBtn = document.getElementById('refreshData');
+        const retryButton = document.getElementById('retryButton');
+        const clearFiltersBtn = document.getElementById('clearFilters');
         
-        const csvText = await response.text();
-        console.log("Raw CSV data:", csvText.substring(0, 500)); // Debug: Show first 500 chars of CSV
+        // Stats elements
+        const totalProducts = document.getElementById('totalProducts');
+        const totalQuantity = document.getElementById('totalQuantity');
+        const totalWeight = document.getElementById('totalWeight');
+        const uniqueBatches = document.getElementById('uniqueBatches');
+        const uniqueBrands = document.getElementById('uniqueBrands');
         
-        // Parse CSV data
-        const data = parseCSV(csvText);
+        // Filter containers
+        const batchFilters = document.getElementById('batchFilters');
+        const sizeFilters = document.getElementById('sizeFilters');
+        const packingFilters = document.getElementById('packingFilters');
+        const locationFilters = document.getElementById('locationFilters');
+        const brandFilters = document.getElementById('brandFilters');
         
-        return data;
-      } catch (error) {
-        console.error('Error fetching data from Google Sheets:', error);
-        showNotification('Error fetching data from Google Sheets: ' + error.message, 'error');
-        return [];
-      }
-    }
-    
-    // Parse CSV data
-    function parseCSV(csvText) {
-      const lines = csvText.split('\n');
-      if (lines.length < 2) {
-        console.log("Not enough lines in CSV data");
-        return [];
-      }
-      
-      // Find the header row
-      let headerRowIndex = 0;
-      for (let i = 0; i < Math.min(5, lines.length); i++) {
-        if (lines[i].toLowerCase().includes('tanggal') && 
-            lines[i].toLowerCase().includes('inbound') && 
-            lines[i].toLowerCase().includes('outbound')) {
-          headerRowIndex = i;
-          break;
-        }
-      }
-      
-      console.log("Header row found at index:", headerRowIndex);
-      console.log("Header row:", lines[headerRowIndex]);
-      
-      // Look for last update info in cell K1 (which would be the 11th column of the first row)
-      // We need to parse the first row to find the 11th column
-      if (lines.length > 0) {
-        const firstRow = lines[0];
-        // Split by comma, but handle quoted values
-        const values = [];
-        let inQuotes = false;
-        let currentValue = '';
-        
-        for (let j = 0; j < firstRow.length; j++) {
-          const char = firstRow[j];
-          
-          if (char === '"' && (j === 0 || firstRow[j-1] !== '\\')) {
-            inQuotes = !inQuotes;
-          } else if (char === ',' && !inQuotes) {
-            values.push(currentValue);
-            currentValue = '';
-          } else {
-            currentValue += char;
-          }
-        }
-        
-        values.push(currentValue); // Add the last value
-        
-        // Clean up quotes
-        const cleanValues = values.map(v => {
-          if (v.startsWith('"') && v.endsWith('"')) {
-            return v.substring(1, v.length - 1);
-          }
-          return v;
-        });
-        
-        // Check if we have at least 11 columns (K is the 11th column, index 10)
-        if (cleanValues.length > 10) {
-          lastUpdateInfo = cleanValues[10];
-          console.log("Last update info from K1:", lastUpdateInfo);
-        }
-      }
-      
-      // Skip header row
-      const data = [];
-      
-      for (let i = headerRowIndex + 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-        
-        // Split by comma, but handle quoted values
-        const values = [];
-        let inQuotes = false;
-        let currentValue = '';
-        
-        for (let j = 0; j < line.length; j++) {
-          const char = line[j];
-          
-          if (char === '"' && (j === 0 || line[j-1] !== '\\')) {
-            inQuotes = !inQuotes;
-          } else if (char === ',' && !inQuotes) {
-            values.push(currentValue);
-            currentValue = '';
-          } else {
-            currentValue += char;
-          }
-        }
-        
-        values.push(currentValue); // Add the last value
-        
-        // Clean up quotes
-        const cleanValues = values.map(v => {
-          if (v.startsWith('"') && v.endsWith('"')) {
-            return v.substring(1, v.length - 1);
-          }
-          return v;
-        });
-        
-        if (cleanValues.length < 8) {
-          console.log("Skipping incomplete row:", cleanValues);
-          continue; // Skip incomplete rows
-        }
-        
-        const tanggal = parseDate(cleanValues[0]);
-        
-        const item = {
-          tanggal: tanggal,
-          id: cleanValues[1],
-          nama: cleanValues[2],
-          inboundQty: parseInt(cleanValues[3]) || 0,
-          inboundKg: parseFloat(cleanValues[4]) || 0,
-          outboundQty: parseInt(cleanValues[5]) || 0,
-          outboundKg: parseFloat(cleanValues[6]) || 0,
-          stockQty: parseInt(cleanValues[7]) || 0,
-          stockKg: parseFloat(cleanValues[8]) || 0
+        // Tab elements
+        const tabInventory = document.getElementById('tabInventory');
+        const tabBatch = document.getElementById('tabBatch');
+        const tabStats = document.getElementById('tabStats');
+        const inventoryContent = document.getElementById('inventoryContent');
+        const batchContent = document.getElementById('batchContent');
+        const statsContent = document.getElementById('statsContent');
+
+        // State variables
+        let inventoryData = [];
+        let filteredData = [];
+        let currentSort = { column: null, direction: 'asc' };
+        let activeFilters = {
+            batch: [],
+            size: [],
+            packing: [],
+            lokasi: [],
+            brand: []
         };
-        
-        data.push(item);
-      }
-      
-      console.log("Parsed data items:", data.length);
-      return data;
-    }
-    
-    // Fungsi untuk memuat data
-    async function loadData() {
-      document.getElementById('tableBody').innerHTML = `
-        <tr>
-          <td colspan="10" class="px-6 py-8 text-center text-gray-500">
-            <div class="flex flex-col items-center">
-              <div class="loading-spinner mb-4"></div>
-              <p>Memuat data...</p>
-            </div>
-          </td>
-        </tr>
-      `;
-      
-      document.getElementById('mobileCards').innerHTML = `
-        <div class="flex justify-center items-center py-8">
-          <div class="flex flex-col items-center">
-            <div class="loading-spinner mb-4"></div>
-            <p class="text-gray-500">Memuat data...</p>
-          </div>
-        </div>
-      `;
-      
-      try {
-        // Store previous stats for comparison
-        storePreviousStats();
-        
-        // Fetch data from Google Sheets
-        const sheetData = await fetchGoogleSheetsData(SHEET_ID, SHEET_NAME);
-        
-        // Reset data
-        allData = [];
-        uniqueProducts = [];
-        
-        // Process data
-        sheetData.forEach(item => {
-          allData.push({
-            tanggal: item.tanggal,
-            id: item.id,
-            nama: item.nama,
-            inboundQty: item.inboundQty,
-            inboundKg: item.inboundKg,
-            outboundQty: item.outboundQty,
-            outboundKg: item.outboundKg,
-            stockQty: item.stockQty,
-            stockKg: item.stockKg
-          });
+        let batchAnalysis = {};
+        let lastUpdatedTimestamp = "";
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            initApp();
         });
-        
-        // Extract unique products
-        const productMap = new Map();
-        allData.forEach(item => {
-          if (!productMap.has(item.nama)) {
-            productMap.set(item.nama, true);
-            uniqueProducts.push({
-              name: item.nama,
-              id: item.id
+
+        function initApp() {
+            fetchGoogleSheetsData();
+            setupEventListeners();
+        }
+
+        function setupEventListeners() {
+            // Search functionality
+            searchInput.addEventListener('input', handleSearch);
+            
+            // Table header sorting
+            const headers = inventoryTable.querySelectorAll('th');
+            headers.forEach(header => {
+                header.addEventListener('click', () => {
+                    const column = header.getAttribute('data-sort');
+                    handleSort(column);
+                });
             });
-          }
-        });
-        
-        // Sort products by name
-        uniqueProducts.sort((a, b) => a.name.localeCompare(b.name));
-        
-        // Update product filter
-        updateProductFilter();
-        
-        // Update trend product select
-        updateTrendProductSelect();
-        
-        // Update dashboard summary
-        updateDashboardSummary();
-        
-        // Update charts
-        updateStockChart();
-        updateTrendChart();
-        
-        // Update last refresh time from K1 cell or current time
-        if (lastUpdateInfo) {
-          document.getElementById('updateTime').textContent = lastUpdateInfo;
-        } else {
-          document.getElementById('updateTime').textContent = new Date().toLocaleTimeString();
+            
+            // Export to PDF
+            exportPdfBtn.addEventListener('click', exportToPdf);
+            
+            // Refresh data
+            refreshBtn.addEventListener('click', fetchGoogleSheetsData);
+            
+            // Retry on error
+            retryButton.addEventListener('click', fetchGoogleSheetsData);
+            
+            // Clear all filters
+            clearFiltersBtn.addEventListener('click', clearAllFilters);
+            
+            // Tab navigation
+            tabInventory.addEventListener('click', () => switchTab('inventory'));
+            tabBatch.addEventListener('click', () => switchTab('batch'));
+            tabStats.addEventListener('click', () => switchTab('stats'));
         }
-        
-        // Apply filters and sort
-        applyFiltersAndSort();
-        
-        showNotification('Data berhasil dimuat', 'success');
-      } catch (error) {
-        console.error('Error loading data:', error);
-        showNotification('Error loading data: ' + error.message, 'error');
-        
-        // Show error in table
-        document.getElementById('tableBody').innerHTML = `
-          <tr>
-            <td colspan="10" class="px-6 py-8 text-center text-red-500">
-              <div class="flex flex-col items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p class="mb-2">Error loading data</p>
-                <p class="text-sm mt-1">Pastikan Sheet1 ada dan dapat diakses</p>
-                <p class="text-sm">${error.message}</p>
-                <p class="text-sm mt-2">Pastikan spreadsheet diatur ke "Anyone with the link can view"</p>
-              </div>
-            </td>
-          </tr>
-        `;
-        
-        document.getElementById('mobileCards').innerHTML = `
-          <div class="flex flex-col items-center py-8 text-center text-red-500">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p class="mb-2">Error loading data</p>
-            <p class="text-sm mt-1">Pastikan Sheet1 ada dan dapat diakses</p>
-            <p class="text-sm">${error.message}</p>
-          </div>
-        `;
-      }
-    }
-    
-    // Store previous stats for comparison
-    function storePreviousStats() {
-      // Count unique products
-      const uniqueProductIds = new Set(allData.map(item => item.id));
-      previousStats.uniqueProducts = uniqueProductIds.size;
-      
-      // Calculate total inbound
-      previousStats.totalInbound = allData.reduce((sum, item) => sum + item.inboundKg, 0);
-      
-      // Calculate total outbound
-      previousStats.totalOutbound = allData.reduce((sum, item) => sum + item.outboundKg, 0);
-      
-      // Get latest stock for each product
-      const latestStockByProduct = {};
-      allData.forEach(item => {
-        if (!latestStockByProduct[item.id] || new Date(item.tanggal) > new Date(latestStockByProduct[item.id].tanggal)) {
-          latestStockByProduct[item.id] = item;
+
+        function fetchGoogleSheetsData() {
+            showLoading();
+            
+            // Use the published Google Sheet as CSV
+            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}&range=${SHEET_RANGE}`;
+            
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.text();
+                })
+                .then(csvText => {
+                    // Parse CSV to JSON
+                    const parsedData = parseCSV(csvText);
+                    
+                    // Check if we have data
+                    if (parsedData.length === 0) {
+                        throw new Error('No data found in the spreadsheet');
+                    }
+                    
+                    inventoryData = parsedData;
+                    filteredData = [...inventoryData];
+                    
+                    // Process production codes
+                    processProductionCodes();
+                    
+                    // Get last updated timestamp from cell S1 (if available)
+                    fetchLastUpdatedTimestamp();
+                    
+                    updateLastUpdated();
+                    populateFilters();
+                    updateStats();
+                    renderTable();
+                    showData();
+                    
+                    // Initialize charts for other tabs
+                    initializeCharts();
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    showError(error.message);
+                });
         }
-      });
-      
-      // Calculate total stock
-      previousStats.totalStock = Object.values(latestStockByProduct).reduce((sum, item) => sum + item.stockKg, 0);
-    }
-    
-    // Update stock chart
-    function updateStockChart() {
-      // Get latest stock for each product
-      const latestStockByProduct = {};
-      allData.forEach(item => {
-        if (!latestStockByProduct[item.id] || new Date(item.tanggal) > new Date(latestStockByProduct[item.id].tanggal)) {
-          latestStockByProduct[item.id] = item;
-        }
-      });
-      
-      let productsToShow = [];
-      const allProducts = Object.values(latestStockByProduct);
-      
-      // Determine which products to show based on chart view
-      if (chartView === "top5") {
-        productsToShow = allProducts.sort((a, b) => b.stockKg - a.stockKg).slice(0, 5);
-      } else if (chartView === "top10") {
-        productsToShow = allProducts.sort((a, b) => b.stockKg - a.stockKg).slice(0, 10);
-      } else if (chartView === "low5") {
-        productsToShow = allProducts.filter(p => p.stockKg > 0).sort((a, b) => a.stockKg - b.stockKg).slice(0, 5);
-      }
-      
-      const labels = productsToShow.map(item => {
-        // Truncate long product names
-        const maxLength = chartView === "top10" ? 15 : 20;
-        return item.nama.length > maxLength ? item.nama.substring(0, maxLength) + '...' : item.nama;
-      });
-      
-      const stockData = productsToShow.map(item => item.stockKg);
-      const inboundData = productsToShow.map(item => item.inboundKg);
-      const outboundData = productsToShow.map(item => item.outboundKg);
-      
-      const ctx = document.getElementById('stockChart').getContext('2d');
-      
-      if (stockChart) {
-        stockChart.destroy();
-      }
-      
-      stockChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Stok (Kg)',
-              data: stockData,
-              backgroundColor: 'rgba(139, 92, 246, 0.7)',
-              borderColor: 'rgba(139, 92, 246, 1)',
-              borderWidth: 1
-            },
-            {
-              label: 'Inbound (Kg)',
-              data: inboundData,
-              backgroundColor: 'rgba(16, 185, 129, 0.7)',
-              borderColor: 'rgba(16, 185, 129, 1)',
-              borderWidth: 1
-            },
-            {
-              label: 'Outbound (Kg)',
-              data: outboundData,
-              backgroundColor: 'rgba(239, 68, 68, 0.7)',
-              borderColor: 'rgba(239, 68, 68, 1)',
-              borderWidth: 1
+
+        function fetchLastUpdatedTimestamp() {
+            // Try to get the last updated timestamp from the first row's S column
+            // This assumes the S1 cell contains the last updated timestamp
+            if (inventoryData.length > 0 && inventoryData[0].lastUpdated) {
+                lastUpdatedTimestamp = inventoryData[0].lastUpdated;
+            } else {
+                // Fallback to current time if not available
+                lastUpdatedTimestamp = new Date().toLocaleString();
             }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Kilogram (Kg)'
-              }
-            },
-            x: {
-              ticks: {
-                maxRotation: 45,
-                minRotation: 45
-              }
+            
+            updateLastUpdated();
+        }
+
+        function parseCSV(csvText) {
+            const lines = csvText.split('\n');
+            if (lines.length <= 1) {
+                return [];
             }
-          },
-          plugins: {
-            legend: {
-              position: 'top',
-            },
-            tooltip: {
-              callbacks: {
-                title: function(context) {
-                  // Show full product name in tooltip
-                  const index = context[0].dataIndex;
-                  return productsToShow[index].nama;
-                },
-                label: function(context) {
-                  return `${context.dataset.label}: ${formatNumber(context.raw)} Kg`;
+            
+            const headers = lines[0].split(',').map(header => header.trim());
+            
+            // Map CSV headers to our internal field names
+            const fieldMap = {
+                'Kode Produksi': 'kode',
+                'Nama Udang': 'nama',
+                'Size': 'size',
+                'Packing Style': 'packing',
+                'Brand': 'brand',
+                'Tanggal Masuk': 'tanggal',
+                'Jumlah (Qty)': 'qty',
+                'Jumlah (kg)': 'kg',
+                'Lokasi': 'lokasi'
+            };
+            
+            // Find the index of the last updated cell (column S)
+            const lastUpdatedIndex = headers.length - 1;
+            
+            return lines.slice(1).filter(line => line.trim() !== '').map(line => {
+                // Handle quoted values with commas inside
+                const values = [];
+                let inQuotes = false;
+                let currentValue = '';
+                
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    
+                    if (char === '"' && (i === 0 || line[i-1] !== '\\')) {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        values.push(currentValue);
+                        currentValue = '';
+                    } else {
+                        currentValue += char;
+                    }
                 }
-              }
-            }
-          }
-        }
-      });
-    }
-    
-    // Update trend chart
-    function updateTrendChart() {
-      const selectedProduct = document.getElementById('trendProductSelect').value;
-      if (!selectedProduct) return;
-      
-      // Filter data for selected product
-      const productData = allData.filter(item => item.id === selectedProduct);
-      
-      // Sort by date
-      productData.sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
-      
-      // Prepare data for chart
-      const labels = productData.map(item => formatDate(item.tanggal));
-      const stockData = productData.map(item => item.stockKg);
-      const inboundData = productData.map(item => item.inboundKg);
-      const outboundData = productData.map(item => item.outboundKg);
-      
-      const ctx = document.getElementById('trendChart').getContext('2d');
-      
-      if (trendChart) {
-        trendChart.destroy();
-      }
-      
-      trendChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Stok (Kg)',
-              data: stockData,
-              backgroundColor: 'rgba(139, 92, 246, 0.2)',
-              borderColor: 'rgba(139, 92, 246, 1)',
-              borderWidth: 2,
-              tension: 0.1,
-              fill: true
-            },
-            {
-              label: 'Inbound (Kg)',
-              data: inboundData,
-              backgroundColor: 'rgba(16, 185, 129, 0)',
-              borderColor: 'rgba(16, 185, 129, 1)',
-              borderWidth: 2,
-              tension: 0.1,
-              pointRadius: 4
-            },
-            {
-              label: 'Outbound (Kg)',
-              data: outboundData,
-              backgroundColor: 'rgba(239, 68, 68, 0)',
-              borderColor: 'rgba(239, 68, 68, 1)',
-              borderWidth: 2,
-              tension: 0.1,
-              pointRadius: 4
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Kilogram (Kg)'
-              }
-            },
-            x: {
-              ticks: {
-                maxRotation: 45,
-                minRotation: 45
-              }
-            }
-          },
-          plugins: {
-            legend: {
-              position: 'top',
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  return `${context.dataset.label}: ${formatNumber(context.raw)} Kg`;
+                
+                // Add the last value
+                values.push(currentValue);
+                
+                const entry = {};
+                
+                // Map CSV values to our internal field names
+                headers.forEach((header, index) => {
+                    if (index < values.length) {
+                        let value = values[index].replace(/^"|"$/g, '').trim(); // Remove quotes
+                        
+                        // Map to our internal field names
+                        const fieldName = fieldMap[header] || header.toLowerCase().replace(/\s+/g, '');
+                        
+                        // Convert numeric values
+                        if (fieldName === 'qty' || fieldName === 'kg') {
+                            value = parseFloat(value) || 0;
+                        }
+                        
+                        // Handle date format
+                        if (fieldName === 'tanggal') {
+                            // Try to parse the date
+                            try {
+                                const dateParts = value.split('/');
+                                if (dateParts.length === 3) {
+                                    // Assuming MM/DD/YYYY format
+                                    const month = parseInt(dateParts[0]);
+                                    const day = parseInt(dateParts[1]);
+                                    const year = parseInt(dateParts[2]);
+                                    value = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                                }
+                            } catch (e) {
+                                console.warn('Error parsing date:', value);
+                            }
+                        }
+                        
+                        entry[fieldName] = value;
+                    }
+                });
+                
+                // Add the last updated timestamp if available
+                if (lastUpdatedIndex < values.length) {
+                    entry.lastUpdated = values[lastUpdatedIndex];
                 }
-              }
+                
+                return entry;
+            });
+        }
+
+        function processProductionCodes() {
+            // Extract batch prefixes from production codes
+            inventoryData.forEach(item => {
+                // Extract batch prefix (first 2-4 characters)
+                const batchPrefix = item.kode ? item.kode.substring(0, 2) : 'UN';
+                item.batchPrefix = batchPrefix;
+                
+                // Try to extract production date from code if it follows a pattern
+                // Assuming format: XX[YYMMDD]## where XX is product code, YYMMDD is date, ## is sequence
+                if (item.kode) {
+                    const dateMatch = item.kode.match(/[A-Z]{2}(\d{2})(\d{2})(\d{2})/);
+                    if (dateMatch) {
+                        const year = '20' + dateMatch[1]; // Assuming 20XX year format
+                        const month = dateMatch[2];
+                        const day = dateMatch[3];
+                        item.productionDate = `${year}-${month}-${day}`;
+                    } else {
+                        item.productionDate = null;
+                    }
+                } else {
+                    item.productionDate = null;
+                }
+            });
+            
+            // Group by batch prefix for analysis
+            batchAnalysis = {};
+            inventoryData.forEach(item => {
+                const prefix = item.batchPrefix;
+                if (!batchAnalysis[prefix]) {
+                    batchAnalysis[prefix] = {
+                        prefix: prefix,
+                        count: 0,
+                        totalQty: 0,
+                        totalKg: 0,
+                        items: [],
+                        firstEntry: null
+                    };
+                }
+                
+                batchAnalysis[prefix].count++;
+                batchAnalysis[prefix].totalQty += item.qty || 0;
+                batchAnalysis[prefix].totalKg += item.kg || 0;
+                batchAnalysis[prefix].items.push(item);
+                
+                // Track first entry date
+                if (item.tanggal) {
+                    const entryDate = new Date(item.tanggal);
+                    if (!batchAnalysis[prefix].firstEntry || entryDate < new Date(batchAnalysis[prefix].firstEntry)) {
+                        batchAnalysis[prefix].firstEntry = item.tanggal;
+                    }
+                }
+            });
+        }
+
+        function handleSearch() {
+            const searchTerm = searchInput.value.toLowerCase();
+            
+            filteredData = inventoryData.filter(item => {
+                return Object.values(item).some(value => 
+                    value !== null && value !== undefined && String(value).toLowerCase().includes(searchTerm)
+                );
+            });
+            
+            // Apply any active filters
+            applyFilters();
+            
+            // Re-render the table
+            renderTable();
+        }
+
+        function handleSort(column) {
+            // Toggle sort direction or set initial sort
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = column;
+                currentSort.direction = 'asc';
             }
-          }
+            
+            // Sort the data
+            filteredData.sort((a, b) => {
+                let valueA = a[column];
+                let valueB = b[column];
+                
+                // Handle null/undefined values
+                if (valueA === null || valueA === undefined) valueA = '';
+                if (valueB === null || valueB === undefined) valueB = '';
+                
+                // Handle date sorting
+                if (column === 'tanggal') {
+                    valueA = new Date(valueA || 0);
+                    valueB = new Date(valueB || 0);
+                }
+                
+                // Handle numeric sorting
+                if (column === 'qty' || column === 'kg') {
+                    valueA = Number(valueA || 0);
+                    valueB = Number(valueB || 0);
+                }
+                
+                if (valueA < valueB) {
+                    return currentSort.direction === 'asc' ? -1 : 1;
+                }
+                if (valueA > valueB) {
+                    return currentSort.direction === 'asc' ? 1 : -1;
+                }
+                return 0;
+            });
+            
+            // Update sort icons
+            updateSortIcons(column);
+            
+            // Re-render the table
+            renderTable();
         }
-      });
-    }
-    
-    // Update trend product select
-    function updateTrendProductSelect() {
-      const select = document.getElementById('trendProductSelect');
-      select.innerHTML = '<option value="">Pilih Produk</option>';
-      
-      // Get unique product IDs
-      const uniqueProductIds = new Map();
-      allData.forEach(item => {
-        if (!uniqueProductIds.has(item.id)) {
-          uniqueProductIds.set(item.id, item.nama);
+
+        function updateSortIcons(activeColumn) {
+            const headers = inventoryTable.querySelectorAll('th');
+            
+            headers.forEach(header => {
+                const column = header.getAttribute('data-sort');
+                const iconSpan = header.querySelector('.sort-icon');
+                
+                if (column === activeColumn) {
+                    iconSpan.textContent = currentSort.direction === 'asc' ? '↑' : '↓';
+                    iconSpan.classList.add('text-blue-300');
+                } else {
+                    iconSpan.textContent = '↕';
+                    iconSpan.classList.remove('text-blue-300');
+                }
+            });
         }
-      });
-      
-      // Add options to select
-      Array.from(uniqueProductIds.entries()).sort((a, b) => a[1].localeCompare(b[1])).forEach(([id, name]) => {
-        const option = document.createElement('option');
-        option.value = id;
-        option.textContent = name;
-        select.appendChild(option);
-      });
-      
-      // Select first product by default
-      if (uniqueProductIds.size > 0) {
-        select.selectedIndex = 1;
-      }
-    }
-    
-    // Show notification
-    function showNotification(message, type = 'info') {
-      const notification = document.getElementById('notification');
-      const notificationMessage = document.getElementById('notification-message');
-      
-      // Set message
-      notificationMessage.textContent = message;
-      
-      // Set type
-      notification.className = 'notification';
-      notification.classList.add(`notification-${type}`);
-      
-      // Set icon
-      const icon = notification.querySelector('.notification-icon svg');
-      if (type === 'success') {
-        icon.innerHTML = `<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />`;
-      } else if (type === 'error') {
-        icon.innerHTML = `<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />`;
-      } else {
-        icon.innerHTML = `<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />`;
-      }
-      
-      // Show notification
-      notification.classList.add('show');
-      
-      // Hide after 3 seconds
-      setTimeout(hideNotification, 3000);
-    }
-    
-    // Hide notification
-    function hideNotification() {
-      const notification = document.getElementById('notification');
-      notification.classList.remove('show');
-    }
-    
-    // Update product filter
-    function updateProductFilter() {
-      const productOptions = document.getElementById('productOptions');
-      productOptions.innerHTML = '';
-      
-      // Add products to dropdown
-      uniqueProducts.forEach(product => {
-        const option = document.createElement('div');
-        option.className = 'multi-select-option';
-        option.innerHTML = `
-          <input type="checkbox" id="product-${product.id}" value="${product.name}" class="product-checkbox">
-          <label for="product-${product.id}">${product.name}</label>
-        `;
-        productOptions.appendChild(option);
-      });
-      
-      // Add event listeners to checkboxes
-      document.querySelectorAll('.product-checkbox').forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-          if (this.checked) {
-            selectedProducts.push(this.value);
-          } else {
-            selectedProducts = selectedProducts.filter(p => p !== this.value);
-          }
-          
-          updateSelectedProductTags();
-          applyFiltersAndSort();
-        });
-      });
-      
-      // Select all checkbox
-      document.getElementById('selectAllProducts').addEventListener('change', function() {
-        const checkboxes = document.querySelectorAll('.product-checkbox');
-        checkboxes.forEach(checkbox => {
-          checkbox.checked = this.checked;
-        });
-        
-        if (this.checked) {
-          selectedProducts = uniqueProducts.map(p => p.name);
-        } else {
-          selectedProducts = [];
+
+        function populateFilters() {
+            // Extract unique values for each filter category
+            const batches = [...new Set(inventoryData.filter(item => item.batchPrefix).map(item => item.batchPrefix))];
+            const sizes = [...new Set(inventoryData.filter(item => item.size).map(item => item.size))];
+            const packingStyles = [...new Set(inventoryData.filter(item => item.packing).map(item => item.packing))];
+            const locations = [...new Set(inventoryData.filter(item => item.lokasi).map(item => item.lokasi))];
+            const brands = [...new Set(inventoryData.filter(item => item.brand).map(item => item.brand))];
+            
+            // Populate batch filters
+            batchFilters.innerHTML = batches.map(batch => `
+                <div class="flex items-center">
+                    <input type="checkbox" id="batch-${batch}" class="batch-filter mr-2" value="${batch}">
+                    <label for="batch-${batch}" class="text-sm">${batch} (${getBatchCount(batch)})</label>
+                </div>
+            `).join('');
+            
+            // Populate size filters
+            sizeFilters.innerHTML = sizes.map(size => `
+                <div class="flex items-center">
+                    <input type="checkbox" id="size-${size.replace(/\s+/g, '_')}" class="size-filter mr-2" value="${size}">
+                    <label for="size-${size.replace(/\s+/g, '_')}" class="text-sm">${size}</label>
+                </div>
+            `).join('');
+            
+            // Populate packing style filters
+            packingFilters.innerHTML = packingStyles.map(style => `
+                <div class="flex items-center">
+                    <input type="checkbox" id="packing-${style.replace(/\s+/g, '_')}" class="packing-filter mr-2" value="${style}">
+                    <label for="packing-${style.replace(/\s+/g, '_')}" class="text-sm">${style}</label>
+                </div>
+            `).join('');
+            
+            // Populate location filters
+            locationFilters.innerHTML = locations.map(location => `
+                <div class="flex items-center">
+                    <input type="checkbox" id="location-${location.replace(/\s+/g, '_')}" class="location-filter mr-2" value="${location}">
+                    <label for="location-${location.replace(/\s+/g, '_')}" class="text-sm">${location}</label>
+                </div>
+            `).join('');
+            
+            // Populate brand filters
+            brandFilters.innerHTML = brands.map(brand => `
+                <div class="flex items-center">
+                    <input type="checkbox" id="brand-${brand.replace(/\s+/g, '_')}" class="brand-filter mr-2" value="${brand}">
+                    <label for="brand-${brand.replace(/\s+/g, '_')}" class="text-sm">${brand}</label>
+                </div>
+            `).join('');
+            
+            // Add event listeners to filter checkboxes
+            document.querySelectorAll('.batch-filter').forEach(checkbox => {
+                checkbox.addEventListener('change', () => {
+                    updateActiveFilters('batch', checkbox.value, checkbox.checked);
+                });
+            });
+            
+            document.querySelectorAll('.size-filter').forEach(checkbox => {
+                checkbox.addEventListener('change', () => {
+                    updateActiveFilters('size', checkbox.value, checkbox.checked);
+                });
+            });
+            
+            document.querySelectorAll('.packing-filter').forEach(checkbox => {
+                checkbox.addEventListener('change', () => {
+                    updateActiveFilters('packing', checkbox.value, checkbox.checked);
+                });
+            });
+            
+            document.querySelectorAll('.location-filter').forEach(checkbox => {
+                checkbox.addEventListener('change', () => {
+                    updateActiveFilters('lokasi', checkbox.value, checkbox.checked);
+                });
+            });
+            
+            document.querySelectorAll('.brand-filter').forEach(checkbox => {
+                checkbox.addEventListener('change', () => {
+                    updateActiveFilters('brand', checkbox.value, checkbox.checked);
+                });
+            });
         }
-        
-        updateSelectedProductTags();
-        applyFiltersAndSort();
-      });
-    }
-    
-    // Update selected product tags
-    function updateSelectedProductTags() {
-      const tagsContainer = document.getElementById('selectedProductTags');
-      tagsContainer.innerHTML = '';
-      
-      if (selectedProducts.length === 0) return;
-      
-      selectedProducts.forEach(product => {
-        const tag = document.createElement('div');
-        tag.className = 'multi-select-tag';
-        tag.innerHTML = `
-          ${product}
-          <button type="button" data-product="${product}">×</button>
-        `;
-        tagsContainer.appendChild(tag);
-      });
-      
-      // Add event listeners to remove buttons
-      tagsContainer.querySelectorAll('button').forEach(button => {
-        button.addEventListener('click', function() {
-          const product = this.getAttribute('data-product');
-          selectedProducts = selectedProducts.filter(p => p !== product);
-          
-          // Update checkbox
-          document.querySelectorAll('.product-checkbox').forEach(checkbox => {
-            if (checkbox.value === product) {
-              checkbox.checked = false;
+
+        function getBatchCount(batchPrefix) {
+            return batchAnalysis[batchPrefix] ? batchAnalysis[batchPrefix].count : 0;
+        }
+
+        function updateActiveFilters(category, value, isChecked) {
+            if (isChecked) {
+                activeFilters[category].push(value);
+            } else {
+                activeFilters[category] = activeFilters[category].filter(item => item !== value);
             }
-          });
-          
-          // Update "Select All" checkbox
-          document.getElementById('selectAllProducts').checked = false;
-          
-          updateSelectedProductTags();
-          applyFiltersAndSort();
-        });
-      });
-    }
-    
-    // Update dashboard summary
-    function updateDashboardSummary() {
-      // Count unique products
-      const uniqueProductIds = new Set(allData.map(item => item.id));
-      const uniqueProductCount = uniqueProductIds.size;
-      document.getElementById('totalProducts').textContent = formatNumber(uniqueProductCount);
-      
-      // Calculate total inbound
-      const totalInbound = allData.reduce((sum, item) => sum + item.inboundKg, 0);
-      document.getElementById('totalInbound').textContent = formatNumber(totalInbound);
-      
-      // Calculate total outbound
-      const totalOutbound = allData.reduce((sum, item) => sum + item.outboundKg, 0);
-      document.getElementById('totalOutbound').textContent = formatNumber(totalOutbound);
-      
-      // Get latest stock for each product
-      const latestStockByProduct = {};
-      allData.forEach(item => {
-        if (!latestStockByProduct[item.id] || new Date(item.tanggal) > new Date(latestStockByProduct[item.id].tanggal)) {
-          latestStockByProduct[item.id] = item;
+            
+            applyFilters();
         }
-      });
-      
-      // Calculate total stock
-      const totalStock = Object.values(latestStockByProduct).reduce((sum, item) => sum + item.stockKg, 0);
-      document.getElementById('totalStock').textContent = formatNumber(totalStock);
-      
-      // Calculate and display percentage changes
-      const uniqueProductsChange = calculatePercentageChange(uniqueProductCount, previousStats.uniqueProducts);
-      const inboundChange = calculatePercentageChange(totalInbound, previousStats.totalInbound);
-      const outboundChange = calculatePercentageChange(totalOutbound, previousStats.totalOutbound);
-      const stockChange = calculatePercentageChange(totalStock, previousStats.totalStock);
-      
-      document.getElementById('uniqueProductsChange').innerHTML = formatPercentageChange(uniqueProductsChange);
-      document.getElementById('inboundChange').innerHTML = formatPercentageChange(inboundChange);
-      document.getElementById('outboundChange').innerHTML = formatPercentageChange(outboundChange);
-      document.getElementById('stockChange').innerHTML = formatPercentageChange(stockChange);
-    }
-    
-    // Apply filters and sort
-    function applyFiltersAndSort() {
-      const searchTerm = document.getElementById('search').value.toLowerCase();
-      const selectedDate = document.getElementById('dateFilter').value;
-      
-      console.log("Applying filters - Date:", selectedDate, "Search:", searchTerm);
-      
-      // Filter data
-      filteredData = allData.filter(item => {
-        // Search filter
-        const matchesSearch = 
-          String(item.id).toLowerCase().includes(searchTerm) ||
-          String(item.nama).toLowerCase().includes(searchTerm) ||
-          String(item.tanggal).includes(searchTerm);
-        
-        // Date filter - improved to work with any date format
-        let matchesDate = true;
-        if (selectedDate) {
-          // Convert both dates to YYYY-MM-DD format for comparison
-          const itemDate = parseDate(item.tanggal);
-          matchesDate = itemDate === selectedDate;
-          
-          console.log(`Comparing dates: item=${itemDate}, selected=${selectedDate}, matches=${matchesDate}`);
+
+        function applyFilters() {
+            // Start with the search results
+            const searchTerm = searchInput.value.toLowerCase();
+            
+            filteredData = inventoryData.filter(item => {
+                // Apply search filter
+                const matchesSearch = searchTerm === '' || Object.values(item).some(value => 
+                    value !== null && value !== undefined && String(value).toLowerCase().includes(searchTerm)
+                );
+                
+                // Apply category filters
+                const matchesBatch = activeFilters.batch.length === 0 || activeFilters.batch.includes(item.batchPrefix);
+                const matchesSize = activeFilters.size.length === 0 || activeFilters.size.includes(item.size);
+                const matchesPacking = activeFilters.packing.length === 0 || activeFilters.packing.includes(item.packing);
+                const matchesLocation = activeFilters.lokasi.length === 0 || activeFilters.lokasi.includes(item.lokasi);
+                const matchesBrand = activeFilters.brand.length === 0 || activeFilters.brand.includes(item.brand);
+                
+                return matchesSearch && matchesBatch && matchesSize && matchesPacking && matchesLocation && matchesBrand;
+            });
+            
+            // Re-apply current sort if any
+            if (currentSort.column) {
+                handleSort(currentSort.column);
+            } else {
+                renderTable();
+            }
         }
-        
-        // Product filter
-        const matchesProduct = selectedProducts.length === 0 || selectedProducts.includes(item.nama);
-        
-        return matchesSearch && matchesDate && matchesProduct;
-      });
-      
-      console.log(`Filtered data: ${filteredData.length} items (from ${allData.length} total)`);
-      
-      // Sort data
-      filteredData.sort((a, b) => {
-        const aValue = a[currentSort.column];
-        const bValue = b[currentSort.column];
-        
-        if (currentSort.column === 'tanggal') {
-          // Special handling for dates
-          const dateA = new Date(a.tanggal);
-          const dateB = new Date(b.tanggal);
-          
-          if (currentSort.direction === 'asc') {
-            return dateA - dateB;
-          } else {
-            return dateB - dateA;
-          }
-        } else if (typeof aValue === 'string' && typeof bValue === 'string') {
-          if (currentSort.direction === 'asc') {
-            return aValue.localeCompare(bValue);
-          } else {
-            return bValue.localeCompare(aValue);
-          }
-        } else {
-          if (currentSort.direction === 'asc') {
-            return aValue - bValue;
-          } else {
-            return bValue - aValue;
-          }
+
+        function clearAllFilters() {
+            // Clear all checkboxes
+            document.querySelectorAll('.batch-filter, .size-filter, .packing-filter, .location-filter, .brand-filter').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Reset active filters
+            activeFilters = {
+                batch: [],
+                size: [],
+                packing: [],
+                lokasi: [],
+                brand: []
+            };
+            
+            // Clear search
+            searchInput.value = '';
+            
+            // Reset filtered data
+            filteredData = [...inventoryData];
+            
+            // Re-render table
+            renderTable();
         }
-      });
-      
-      // Reset to first page
-      currentPage = 1;
-      
-      // Render table and pagination
-      renderTable();
-      renderMobileCards();
-      renderPagination();
-      updateTotals();
-    }
-    
-    // Update totals
-    function updateTotals() {
-      // Calculate totals for filtered data
-      const totalInboundQty = filteredData.reduce((sum, item) => sum + item.inboundQty, 0);
-      const totalInboundKg = filteredData.reduce((sum, item) => sum + item.inboundKg, 0);
-      const totalOutboundQty = filteredData.reduce((sum, item) => sum + item.outboundQty, 0);
-      const totalOutboundKg = filteredData.reduce((sum, item) => sum + item.outboundKg, 0);
-      
-      // Get latest stock for each product in filtered data
-      const latestStockByProduct = {};
-      filteredData.forEach(item => {
-        if (!latestStockByProduct[item.id] || new Date(item.tanggal) > new Date(latestStockByProduct[item.id].tanggal)) {
-          latestStockByProduct[item.id] = item;
+
+        function renderTable() {
+            const tbody = inventoryTable.querySelector('tbody');
+            tbody.innerHTML = '';
+            
+            if (filteredData.length === 0) {
+                const noDataRow = document.createElement('tr');
+                noDataRow.innerHTML = `
+                    <td colspan="9" class="text-center py-8 text-gray-500">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p class="mt-2">No matching inventory items found</p>
+                    </td>
+                `;
+                tbody.appendChild(noDataRow);
+            } else {
+                // Group by batch for better visualization
+                const groupedByBatch = {};
+                filteredData.forEach(item => {
+                    const batchKey = item.batchPrefix || 'Unknown';
+                    if (!groupedByBatch[batchKey]) {
+                        groupedByBatch[batchKey] = [];
+                    }
+                    groupedByBatch[batchKey].push(item);
+                });
+                
+                // Render each batch group
+                Object.keys(groupedByBatch).forEach(batchKey => {
+                    const batchItems = groupedByBatch[batchKey];
+                    
+                    // Add a batch header row
+                    const batchHeaderRow = document.createElement('tr');
+                    batchHeaderRow.classList.add('bg-blue-50', 'font-medium');
+                    batchHeaderRow.innerHTML = `
+                        <td colspan="9" class="py-2 px-4">
+                            <div class="flex items-center">
+                                <span class="badge badge-blue mr-2">${batchKey}</span>
+                                <span>Production Batch (${batchItems.length} items)</span>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(batchHeaderRow);
+                    
+                    // Add individual items
+                    batchItems.forEach(item => {
+                        const row = document.createElement('tr');
+                        
+                        // Format date for display
+                        let formattedDate = 'N/A';
+                        if (item.tanggal) {
+                            try {
+                                formattedDate = new Date(item.tanggal).toLocaleDateString('id-ID', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric'
+                                });
+                            } catch (e) {
+                                formattedDate = item.tanggal;
+                            }
+                        }
+                        
+                        // Create tooltip for production code info
+                        let productionInfo = '';
+                        if (item.productionDate) {
+                            productionInfo = `
+                                <div class="tooltip">
+                                    <i class="fas fa-info-circle text-blue-500 ml-1"></i>
+                                    <span class="tooltiptext">Production Date: ${item.productionDate}</span>
+                                </div>
+                            `;
+                        }
+                        
+                        row.innerHTML = `
+                            <td>
+                                ${item.kode || 'N/A'}
+                                ${productionInfo}
+                            </td>
+                            <td>${item.nama || 'N/A'}</td>
+                            <td><span class="badge badge-blue">${item.size || 'N/A'}</span></td>
+                            <td>${item.packing || 'N/A'}</td>
+                            <td><span class="badge badge-orange">${item.brand || 'N/A'}</span></td>
+                            <td>${formattedDate}</td>
+                            <td class="text-right">${(item.qty || 0).toLocaleString()}</td>
+                            <td class="text-right">${(item.kg || 0).toLocaleString()} kg</td>
+                            <td><span class="badge badge-green">${item.lokasi || 'N/A'}</span></td>
+                        `;
+                        
+                        tbody.appendChild(row);
+                    });
+                });
+            }
+            
+            // Update result count
+            resultCount.textContent = `Showing ${filteredData.length} of ${inventoryData.length} items`;
+            
+            // Update stats based on filtered data
+            updateStats();
         }
-      });
-      
-      // Calculate total stock
-      const totalStockQty = Object.values(latestStockByProduct).reduce((sum, item) => sum + item.stockQty, 0);
-      const totalStockKg = Object.values(latestStockByProduct).reduce((sum, item) => sum + item.stockKg, 0);
-      
-      // Update desktop totals
-      document.getElementById('totalInboundQty').textContent = formatNumber(totalInboundQty);
-      document.getElementById('totalInboundKg').textContent = formatNumber(totalInboundKg);
-      document.getElementById('totalOutboundQty').textContent = formatNumber(totalOutboundQty);
-      document.getElementById('totalOutboundKg').textContent = formatNumber(totalOutboundKg);
-      document.getElementById('totalStockQty').textContent = formatNumber(totalStockQty);
-      document.getElementById('totalStockKg').textContent = formatNumber(totalStockKg);
-      
-      // Update mobile totals
-      document.getElementById('mobileTotalInbound').textContent = `${formatNumber(totalInboundQty)} Qty / ${formatNumber(totalInboundKg)} Kg`;
-      document.getElementById('mobileTotalOutbound').textContent = `${formatNumber(totalOutboundQty)} Qty / ${formatNumber(totalOutboundKg)} Kg`;
-      document.getElementById('mobileTotalStock').textContent = `${formatNumber(totalStockQty)} Qty / ${formatNumber(totalStockKg)} Kg`;
-    }
-    
-    // Get stock status
-    function getStockStatus(item) {
-      if (item.stockKg <= 0) {
-        return { class: 'badge-danger', text: 'Kosong' };
-      } else if (item.stockKg < 100) {
-        return { class: 'badge-warning', text: 'Rendah' };
-      } else {
-        return { class: 'badge-success', text: 'Tersedia' };
-      }
-    }
-    
-    // Render table with current page data (desktop)
-    function renderTable() {
-      const tableBody = document.getElementById('tableBody');
-      
-      if (allData.length === 0) {
-        tableBody.innerHTML = `
-          <tr>
-            <td colspan="10" class="px-6 py-8 text-center text-gray-500">
-              <div class="flex flex-col items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <p class="mb-2">Belum ada data</p>
-                <p class="text-sm">Klik "Refresh Data" untuk memulai</p>
-              </div>
-            </td>
-          </tr>
-        `;
-        return;
-      }
-      
-      const startIndex = (currentPage - 1) * itemsPerPage;
-      const endIndex = Math.min(startIndex + itemsPerPage, filteredData.length);
-      const pageData = filteredData.slice(startIndex, endIndex);
-      
-      if (pageData.length === 0) {
-        tableBody.innerHTML = `
-          <tr>
-            <td colspan="10" class="px-6 py-4 text-center text-gray-500">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p>Tidak ada data yang ditemukan</p>
-              <p class="text-sm mt-1">Coba ubah filter atau kata kunci pencarian</p>
-            </td>
-          </tr>
-        `;
-        return;
-      }
-      
-      tableBody.innerHTML = '';
-      
-      // Use document fragment for better performance
-      const fragment = document.createDocumentFragment();
-      
-      pageData.forEach((item, index) => {
-        const row = document.createElement('tr');
-        row.className = 'hover-row fade-in';
-        row.style.animationDelay = `${Math.min(index * 30, 500)}ms`; // Cap animation delay
-        
-        const status = getStockStatus(item);
-        
-        row.innerHTML = `
-          <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">${formatDate(item.tanggal)}</td>
-          <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">${item.id}</td>
-          <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${item.nama}</td>
-          <td class="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-700">${formatNumber(item.inboundQty)}</td>
-          <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-medium text-green-600">${formatNumber(item.inboundKg)}</td>
-          <td class="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-700">${formatNumber(item.outboundQty)}</td>
-          <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-medium text-red-600">${formatNumber(item.outboundKg)}</td>
-          <td class="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-700">${formatNumber(item.stockQty)}</td>
-          <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-medium text-purple-600">${formatNumber(item.stockKg)}</td>
-          <td class="px-4 py-3 whitespace-nowrap text-center">
-            <span class="badge ${status.class}">${status.text}</span>
-          </td>
-        `;
-        
-        fragment.appendChild(row);
-      });
-      
-      tableBody.appendChild(fragment);
-      
-      // Update showing count
-      document.getElementById('showing').textContent = pageData.length;
-      document.getElementById('totalItems').textContent = filteredData.length;
-    }
-    
-    // Render mobile cards
-    function renderMobileCards() {
-      const mobileCards = document.getElementById('mobileCards');
-      
-      if (allData.length === 0) {
-        mobileCards.innerHTML = `
-          <div class="flex flex-col items-center py-8 text-center text-gray-500">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <p class="mb-2">Belum ada data</p>
-            <p class="text-sm">Klik "Refresh Data" untuk memulai</p>
-          </div>
-        `;
-        return;
-      }
-      
-      const startIndex = (currentPage - 1) * itemsPerPage;
-      const endIndex = Math.min(startIndex + itemsPerPage, filteredData.length);
-      const pageData = filteredData.slice(startIndex, endIndex);
-      
-      if (pageData.length === 0) {
-        mobileCards.innerHTML = `
-          <div class="flex flex-col items-center py-8 text-center text-gray-500">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p>Tidak ada data yang ditemukan</p>
-            <p class="text-sm mt-1">Coba ubah filter atau kata kunci pencarian</p>
-          </div>
-        `;
-        return;
-      }
-      
-      mobileCards.innerHTML = '';
-      
-      // Use document fragment for better performance
-      const fragment = document.createDocumentFragment();
-      
-      pageData.forEach((item, index) => {
-        const card = document.createElement('div');
-        card.className = 'mobile-card bg-white border border-gray-200 fade-in';
-        card.style.animationDelay = `${Math.min(index * 30, 500)}ms`; // Cap animation delay
-        
-        const status = getStockStatus(item);
-        
-        card.innerHTML = `
-          <div class="mobile-card-header">
-            <div class="font-medium">${item.nama}</div>
-            <div class="flex items-center">
-              <span class="text-sm text-gray-500 mr-2">${formatDate(item.tanggal)}</span>
-              <span class="badge ${status.class}">${status.text}</span>
-            </div>
-          </div>
-          <div class="mobile-card-body">
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <div class="mobile-card-label">ID</div>
-                <div class="mobile-card-value">${item.id}</div>
-              </div>
-              
-              <div>
-                <div class="mobile-card-label">Stok</div>
-                <div class="mobile-card-value text-purple-600">${formatNumber(item.stockQty)} / ${formatNumber(item.stockKg)} kg</div>
-              </div>
-              
-              <div>
-                <div class="mobile-card-label">Inbound</div>
-                <div class="mobile-card-value text-green-600">${formatNumber(item.inboundQty)} / ${formatNumber(item.inboundKg)} kg</div>
-              </div>
-              
-              <div>
-                <div class="mobile-card-label">Outbound</div>
-                <div class="mobile-card-value text-red-600">${formatNumber(item.outboundQty)} / ${formatNumber(item.outboundKg)} kg</div>
-              </div>
-            </div>
-          </div>
-        `;
-        
-        fragment.appendChild(card);
-      });
-      
-      mobileCards.appendChild(fragment);
-      
-      // Update showing count
-      document.getElementById('showing').textContent = pageData.length;
-      document.getElementById('totalItems').textContent = filteredData.length;
-    }
-    
-    // Render pagination
-    function renderPagination() {
-      const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-      const pageNumbers = document.getElementById('pageNumbers');
-      pageNumbers.innerHTML = '';
-      
-      // Previous button
-      document.getElementById('prevPage').disabled = currentPage === 1;
-      
-      // Next button
-      document.getElementById('nextPage').disabled = currentPage === totalPages || totalPages === 0;
-      
-      // Page numbers
-      if (totalPages <= 5) {
-        // Show all pages if 5 or fewer
-        for (let i = 1; i <= totalPages; i++) {
-          addPageButton(i);
+
+        function updateStats() {
+            // Calculate statistics from filtered data
+            const uniqueProducts = new Set(filteredData.filter(item => item.kode).map(item => item.kode)).size;
+            const totalQty = filteredData.reduce((sum, item) => sum + (item.qty || 0), 0);
+            const totalKg = filteredData.reduce((sum, item) => sum + (item.kg || 0), 0);
+            const uniqueBatchCount = new Set(filteredData.filter(item => item.batchPrefix).map(item => item.batchPrefix)).size;
+            const uniqueBrandCount = new Set(filteredData.filter(item => item.brand).map(item => item.brand)).size;
+            
+            // Update the stats display
+            totalProducts.textContent = uniqueProducts;
+            totalQuantity.textContent = totalQty.toLocaleString();
+            totalWeight.textContent = totalKg.toLocaleString() + ' kg';
+            uniqueBatches.textContent = uniqueBatchCount;
+            uniqueBrands.textContent = uniqueBrandCount;
         }
-      } else {
-        // Show limited pages with ellipsis
-        if (currentPage <= 3) {
-          // Near start
-          for (let i = 1; i <= 3; i++) {
-            addPageButton(i);
-          }
-          addEllipsis();
-          addPageButton(totalPages);
-        } else if (currentPage >= totalPages - 2) {
-          // Near end
-          addPageButton(1);
-          addEllipsis();
-          for (let i = totalPages - 2; i <= totalPages; i++) {
-            addPageButton(i);
-          }
-        } else {
-          // Middle
-          addPageButton(1);
-          addEllipsis();
-          addPageButton(currentPage - 1);
-          addPageButton(currentPage);
-          addPageButton(currentPage + 1);
-          addEllipsis();
-          addPageButton(totalPages);
+
+        function updateLastUpdated() {
+            // Use the timestamp from S1 cell or fallback to current time
+            lastUpdated.textContent = `Last updated: ${lastUpdatedTimestamp || new Date().toLocaleString()}`;
         }
-      }
-    }
-    
-    // Add page button
-    function addPageButton(pageNum) {
-      const pageNumbers = document.getElementById('pageNumbers');
-      const button = document.createElement('button');
-      button.textContent = pageNum;
-      button.className = pageNum === currentPage 
-        ? 'btn btn-primary btn-sm' 
-        : 'btn btn-outline btn-sm';
-      button.addEventListener('click', () => {
-        currentPage = pageNum;
-        renderTable();
-        renderMobileCards();
-        renderPagination();
-      });
-      pageNumbers.appendChild(button);
-    }
-    
-    // Add ellipsis
-    function addEllipsis() {
-      const pageNumbers = document.getElementById('pageNumbers');
-      const ellipsis = document.createElement('span');
-      ellipsis.textContent = '...';
-      ellipsis.className = 'px-2 py-1 text-gray-500';
-      pageNumbers.appendChild(ellipsis);
-    }
-    
-    // Show PDF export modal
-    function showPdfModal() {
-      document.getElementById('pdfModal').classList.add('show');
-    }
-    
-    // Close PDF export modal
-    function closePdfModal() {
-      document.getElementById('pdfModal').classList.remove('show');
-    }
-    
-    // Generate PDF report
-    function generatePDF() {
-      // Get options from modal
-      const title = document.getElementById('pdfTitle').value || 'Laporan Stok GIM';
-      const subtitle = document.getElementById('pdfSubtitle').value || 'MUID PPIC';
-      const includeSummary = document.getElementById('includeSummary').checked;
-      const includeChart = document.getElementById('includeChart').checked;
-      const includeTable = document.getElementById('includeTable').checked;
-      const orientation = document.getElementById('pdfOrientation').value;
-      
-      // Create PDF document
-      const doc = new jsPDF({
-        orientation: orientation,
-        unit: 'mm',
-        format: 'a4'
-      });
-      
-      // Set font
-      doc.setFont('helvetica');
-      
-      // Add title
-      doc.setFontSize(18);
-      doc.setTextColor(0, 51, 153);
-      doc.text(title, 14, 20);
-      
-      // Add subtitle
-      doc.setFontSize(12);
-      doc.setTextColor(100, 100, 100);
-      doc.text(subtitle, 14, 28);
-      
-      // Add date
-      const currentDate = new Date().toLocaleDateString('id-ID', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-      });
-      doc.text(`Tanggal: ${currentDate}`, 14, 35);
-      
-      // Add last update info
-      if (lastUpdateInfo) {
-        doc.text(`Terakhir diperbarui: ${lastUpdateInfo}`, 14, 42);
-      }
-      
-      let yPosition = 50;
-      
-      // Add summary section
-      if (includeSummary) {
-        doc.setFontSize(14);
-        doc.setTextColor(0, 0, 0);
-        doc.text('Ringkasan', 14, yPosition);
-        yPosition += 8;
-        
-        // Get summary data
-        const uniqueProductIds = new Set(allData.map(item => item.id));
-        const uniqueProductCount = uniqueProductIds.size;
-        
-        const totalInbound = allData.reduce((sum, item) => sum + item.inboundKg, 0);
-        const totalOutbound = allData.reduce((sum, item) => sum + item.outboundKg, 0);
-        
-        const latestStockByProduct = {};
-        allData.forEach(item => {
-          if (!latestStockByProduct[item.id] || new Date(item.tanggal) > new Date(latestStockByProduct[item.id].tanggal)) {
-            latestStockByProduct[item.id] = item;
-          }
-        });
-        
-        const totalStock = Object.values(latestStockByProduct).reduce((sum, item) => sum + item.stockKg, 0);
-        
-        // Create summary table
-        const summaryData = [
-          ['Total Produk', formatNumber(uniqueProductCount)],
-          ['Total Inbound (Kg)', formatNumber(totalInbound)],
-          ['Total Outbound (Kg)', formatNumber(totalOutbound)],
-          ['Total Stok (Kg)', formatNumber(totalStock)]
-        ];
-        
-        doc.autoTable({
-          startY: yPosition,
-          head: [['Metrik', 'Nilai']],
-          body: summaryData,
-          theme: 'grid',
-          headStyles: {
-            fillColor: [37, 99, 235],
-            textColor: [255, 255, 255],
-            fontStyle: 'bold'
-          },
-          styles: {
-            fontSize: 10
-          },
-          columnStyles: {
-            0: { cellWidth: 60 },
-            1: { cellWidth: 40, halign: 'right' }
-          }
-        });
-        
-        yPosition = doc.lastAutoTable.finalY + 15;
-      }
-      
-      // Add chart section
-      if (includeChart && stockChart) {
-        // Check if we need a new page
-        if (yPosition > 180) {
-          doc.addPage();
-          yPosition = 20;
+
+        function exportToPdf() {
+            // Create a new jsPDF instance
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(18);
+            doc.text('ShrimpStock Inventory Report', 14, 22);
+            
+            // Add timestamp
+            doc.setFontSize(10);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 30);
+            doc.text(`Last Data Update: ${lastUpdatedTimestamp || 'Unknown'}`, 14, 36);
+            
+            // Create the table
+            const tableColumn = ["Kode Produksi", "Nama", "Size", "Packing", "Brand", "Tanggal", "Qty", "Kg", "Lokasi"];
+            const tableRows = [];
+            
+            // Add data rows
+            filteredData.forEach(item => {
+                let formattedDate = 'N/A';
+                if (item.tanggal) {
+                    try {
+                        formattedDate = new Date(item.tanggal).toLocaleDateString();
+                    } catch (e) {
+                        formattedDate = item.tanggal;
+                    }
+                }
+                
+                const rowData = [
+                    item.kode || 'N/A',
+                    item.nama || 'N/A',
+                    item.size || 'N/A',
+                    item.packing || 'N/A',
+                    item.brand || 'N/A',
+                    formattedDate,
+                    (item.qty || 0).toString(),
+                    (item.kg || 0).toString(),
+                    item.lokasi || 'N/A'
+                ];
+                tableRows.push(rowData);
+            });
+            
+            // Generate the PDF table
+            doc.autoTable({
+                head: [tableColumn],
+                body: tableRows,
+                startY: 42,
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [15, 94, 156] },
+                didDrawPage: function(data) {
+                    // Add page number
+                    doc.setFontSize(8);
+                    doc.text(`Page ${doc.internal.getNumberOfPages()}`, data.settings.margin.left, doc.internal.pageSize.height - 10);
+                }
+            });
+            
+            // Add summary statistics
+            const finalY = doc.lastAutoTable.finalY + 10;
+            doc.setFontSize(12);
+            doc.text('Summary Statistics', 14, finalY);
+            
+            doc.setFontSize(10);
+            doc.text(`Total Products: ${totalProducts.textContent}`, 14, finalY + 7);
+            doc.text(`Total Quantity: ${totalQuantity.textContent}`, 14, finalY + 14);
+            doc.text(`Total Weight: ${totalWeight.textContent}`, 14, finalY + 21);
+            doc.text(`Unique Batches: ${uniqueBatches.textContent}`, 14, finalY + 28);
+            doc.text(`Unique Brands: ${uniqueBrands.textContent}`, 14, finalY + 35);
+            
+            // Save the PDF
+            doc.save('ShrimpStock-Inventory.pdf');
         }
-        
-        doc.setFontSize(14);
-        doc.setTextColor(0, 0, 0);
-        doc.text('Grafik Stok', 14, yPosition);
-        yPosition += 8;
-        
-        // Convert chart to image
-        const stockChartCanvas = document.getElementById('stockChart');
-        const stockChartImage = stockChartCanvas.toDataURL('image/png');
-        
-        // Add chart image to PDF
-        const imgWidth = orientation === 'landscape' ? 180 : 120;
-        const imgHeight = imgWidth * 0.6;
-        doc.addImage(stockChartImage, 'PNG', 14, yPosition, imgWidth, imgHeight);
-        
-        yPosition += imgHeight + 15;
-        
-        // Add trend chart if available
-        if (trendChart) {
-          // Check if we need a new page
-          if (yPosition > 180) {
-            doc.addPage();
-            yPosition = 20;
-          }
-          
-          doc.setFontSize(14);
-          doc.text('Trend Produk', 14, yPosition);
-          yPosition += 8;
-          
-          // Convert trend chart to image
-          const trendChartCanvas = document.getElementById('trendChart');
-          const trendChartImage = trendChartCanvas.toDataURL('image/png');
-          
-          // Add trend chart image to PDF
-          doc.addImage(trendChartImage, 'PNG', 14, yPosition, imgWidth, imgHeight);
-          
-          yPosition += imgHeight + 15;
+
+        function switchTab(tabName) {
+            // Remove active class from all tabs
+            tabInventory.classList.remove('active');
+            tabBatch.classList.remove('active');
+            tabStats.classList.remove('active');
+            inventoryContent.classList.remove('active');
+            batchContent.classList.remove('active');
+            statsContent.classList.remove('active');
+            
+            // Add active class to selected tab
+            if (tabName === 'inventory') {
+                tabInventory.classList.add('active');
+                inventoryContent.classList.add('active');
+            } else if (tabName === 'batch') {
+                tabBatch.classList.add('active');
+                batchContent.classList.add('active');
+                renderBatchAnalysis();
+            } else if (tabName === 'stats') {
+                tabStats.classList.add('active');
+                statsContent.classList.add('active');
+                renderStatistics();
+            }
         }
-      }
-      
-      // Add table section
-      if (includeTable) {
-        // Check if we need a new page
-        if (yPosition > 180) {
-          doc.addPage();
-          yPosition = 20;
+
+        function renderBatchAnalysis() {
+            const batchTableBody = document.getElementById('batchTableBody');
+            batchTableBody.innerHTML = '';
+            
+            // Sort batches by total quantity
+            const sortedBatches = Object.values(batchAnalysis).sort((a, b) => b.totalQty - a.totalQty);
+            
+            sortedBatches.forEach(batch => {
+                const row = document.createElement('tr');
+                
+                let formattedDate = 'N/A';
+                if (batch.firstEntry) {
+                    try {
+                        formattedDate = new Date(batch.firstEntry).toLocaleDateString('id-ID', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                        });
+                    } catch (e) {
+                        formattedDate = batch.firstEntry;
+                    }
+                }
+                
+                row.innerHTML = `
+                    <td class="px-4 py-2">
+                        <span class="badge badge-blue">${batch.prefix}</span>
+                    </td>
+                    <td class="px-4 py-2">${batch.count}</td>
+                    <td class="px-4 py-2">${batch.totalQty.toLocaleString()}</td>
+                    <td class="px-4 py-2">${batch.totalKg.toLocaleString()} kg</td>
+                    <td class="px-4 py-2">${formattedDate}</td>
+                    <td class="px-4 py-2">
+                        <button class="bg-blue-100 hover:bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs view-batch-details" data-batch="${batch.prefix}">
+                            View Details
+                        </button>
+                    </td>
+                `;
+                
+                batchTableBody.appendChild(row);
+            });
+            
+            // Add event listeners to view details buttons
+            document.querySelectorAll('.view-batch-details').forEach(button => {
+                button.addEventListener('click', () => {
+                    const batchPrefix = button.getAttribute('data-batch');
+                    viewBatchDetails(batchPrefix);
+                });
+            });
+            
+            // Render batch charts
+            renderBatchCharts();
         }
-        
-        doc.setFontSize(14);
-        doc.setTextColor(0, 0, 0);
-        doc.text('Data Stok', 14, yPosition);
-        yPosition += 8;
-        
-        // Prepare table data
-        const tableHead = [
-          ['Tanggal', 'ID', 'Nama Produk', 'Inbound (Kg)', 'Outbound (Kg)', 'Stok (Kg)']
-        ];
-        
-        const tableBody = filteredData.map(item => [
-          formatDate(item.tanggal),
-          item.id,
-          item.nama,
-          formatNumber(item.inboundKg),
-          formatNumber(item.outboundKg),
-          formatNumber(item.stockKg)
-        ]);
-        
-        // Add table to PDF
-        doc.autoTable({
-          startY: yPosition,
-          head: tableHead,
-          body: tableBody,
-          theme: 'grid',
-          headStyles: {
-            fillColor: [37, 99, 235],
-            textColor: [255, 255, 255],
-            fontStyle: 'bold'
-          },
-          styles: {
-            fontSize: 8,
-            cellPadding: 2
-          },
-          columnStyles: {
-            0: { cellWidth: 20 },
-            1: { cellWidth: 15 },
-            2: { cellWidth: orientation === 'landscape' ? 80 : 40 },
-            3: { cellWidth: 25, halign: 'right' },
-            4: { cellWidth: 25, halign: 'right' },
-            5: { cellWidth: 25, halign: 'right' }
-          }
-        });
-      }
-      
-      // Add footer
-      const pageCount = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(150, 150, 150);
-        doc.text(`GIM Warehouse Monitoring System v3.0 - Halaman ${i} dari ${pageCount}`, 14, doc.internal.pageSize.height - 10);
-        doc.text(`Diekspor pada: ${new Date().toLocaleString('id-ID')}`, doc.internal.pageSize.width - 14, doc.internal.pageSize.height - 10, { align: 'right' });
-      }
-      
-      // Save PDF
-      const fileName = `Laporan_Stok_GIM_${new Date().toISOString().split('T')[0]}.pdf`;
-      doc.save(fileName);
-      
-      // Close modal
-      closePdfModal();
-      
-      // Show notification
-      showNotification('PDF berhasil dibuat', 'success');
-    }
-    
-    // Event listeners
-    document.addEventListener('DOMContentLoaded', () => {
-      // Load initial data
-      loadData();
-      
-      // Date filter
-      document.getElementById('dateFilter').addEventListener('change', (e) => {
-        console.log("Date filter changed:", e.target.value);
-        applyFiltersAndSort();
-        
-        const selectedDate = e.target.value;
-        if (selectedDate) {
-          showNotification(`Filter tanggal: ${formatDate(selectedDate)}`, 'info');
-        } else {
-          showNotification('Menampilkan semua tanggal', 'info');
+
+        function viewBatchDetails(batchPrefix) {
+            // Filter data to show only the selected batch
+            activeFilters.batch = [batchPrefix];
+            
+            // Update checkboxes to reflect the filter
+            document.querySelectorAll('.batch-filter').forEach(checkbox => {
+                checkbox.checked = checkbox.value === batchPrefix;
+            });
+            
+            // Switch to inventory tab to show the filtered data
+            switchTab('inventory');
+            
+            // Apply the filter
+            applyFilters();
         }
-      });
-      
-      // Refresh button
-      document.getElementById('refreshBtn').addEventListener('click', () => {
-        loadData();
-        showNotification('Data diperbarui', 'success');
-      });
-      
-      // Export button
-      document.getElementById('exportBtn').addEventListener('click', showPdfModal);
-      
-      // Generate PDF button
-      document.getElementById('generatePdfBtn').addEventListener('click', generatePDF);
-      
-      // Search input
-      document.getElementById('search').addEventListener('input', applyFiltersAndSort);
-      
-      // Chart view selector
-      document.getElementById('chartView').addEventListener('change', (e) => {
-        chartView = e.target.value;
-        updateStockChart();
-      });
-      
-      // Trend product selector
-      document.getElementById('trendProductSelect').addEventListener('change', updateTrendChart);
-      
-      // Product filter input
-      const productFilterInput = document.getElementById('productFilterInput');
-      const productFilterDropdown = document.getElementById('productFilterDropdown');
-      
-      productFilterInput.addEventListener('focus', () => {
-        productFilterDropdown.classList.add('show');
-      });
-      
-      // Close dropdown when clicking outside
-      document.addEventListener('click', (e) => {
-        if (!e.target.closest('.multi-select')) {
-          productFilterDropdown.classList.remove('show');
+
+        function renderBatchCharts() {
+            document.getElementById('batchChart').innerHTML = createSimpleBarChart(batchAnalysis);
+            document.getElementById('timelineChart').innerHTML = createSimpleTimelineChart(batchAnalysis);
         }
-      });
-      
-      // Pagination buttons
-      document.getElementById('prevPage').addEventListener('click', () => {
-        if (currentPage > 1) {
-          currentPage--;
-          renderTable();
-          renderMobileCards();
-          renderPagination();
+
+        function renderStatistics() {
+            document.getElementById('shrimpTypeChart').innerHTML = createSimplePieChart('shrimpType');
+            document.getElementById('sizeChart').innerHTML = createSimplePieChart('size');
+            document.getElementById('locationChart').innerHTML = createSimplePieChart('location');
+            document.getElementById('packingChart').innerHTML = createSimplePieChart('packing');
+            document.getElementById('brandChart').innerHTML = createSimplePieChart('brand');
         }
-      });
-      
-      document.getElementById('nextPage').addEventListener('click', () => {
-        const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-        if (currentPage < totalPages) {
-          currentPage++;
-          renderTable();
-          renderMobileCards();
-          renderPagination();
+
+        function createSimpleBarChart(data) {
+            // Create a simple SVG bar chart for batch data
+            const batches = Object.values(data).sort((a, b) => b.totalQty - a.totalQty).slice(0, 5);
+            const maxValue = Math.max(...batches.map(b => b.totalQty));
+            
+            let svg = `
+                <svg width="100%" height="100%" viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
+                    <text x="200" y="20" text-anchor="middle" font-size="14" font-weight="bold">Top 5 Batches by Quantity</text>
+            `;
+            
+            // Draw bars
+            batches.forEach((batch, index) => {
+                const barHeight = 25;
+                const barWidth = (batch.totalQty / maxValue) * 300;
+                const y = 40 + (index * 35);
+                
+                svg += `
+                    <rect x="80" y="${y}" width="${barWidth}" height="${barHeight}" fill="#3b82f6" opacity="0.8" rx="4" />
+                    <text x="75" y="${y + barHeight/2 + 5}" text-anchor="end" font-size="12">${batch.prefix}</text>
+                    <text x="${barWidth + 85}" y="${y + barHeight/2 + 5}" font-size="12">${batch.totalQty}</text>
+                `;
+            });
+            
+            svg += '</svg>';
+            return svg;
         }
-      });
-      
-      // Sort headers
-      document.querySelectorAll('th[data-sort]').forEach(header => {
-        header.addEventListener('click', () => {
-          const column = header.getAttribute('data-sort');
-          
-          if (currentSort.column === column) {
-            // Toggle direction
-            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-          } else {
-            // New column, default to ascending
-            currentSort.column = column;
-            currentSort.direction = 'asc';
-          }
-          
-          // Update sort field and direction in UI
-          document.getElementById('sortField').value = column;
-          updateSortDirectionUI();
-          
-          applyFiltersAndSort();
-        });
-      });
-      
-      // Sort field selector
-      document.getElementById('sortField').addEventListener('change', (e) => {
-        currentSort.column = e.target.value;
-        applyFiltersAndSort();
-      });
-      
-      // Sort direction button
-      document.getElementById('sortDirection').addEventListener('click', () => {
-        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-        updateSortDirectionUI();
-        applyFiltersAndSort();
-      });
-      
-      // Update sort direction UI
-      function updateSortDirectionUI() {
-        const ascIcon = document.getElementById('sortAscIcon');
-        const descIcon = document.getElementById('sortDescIcon');
-        
-        if (currentSort.direction === 'asc') {
-          ascIcon.classList.remove('hidden');
-          descIcon.classList.add('hidden');
-        } else {
-          ascIcon.classList.add('hidden');
-          descIcon.classList.remove('hidden');
+
+        function createSimpleTimelineChart(data) {
+            // Create a simple SVG timeline chart
+            const batches = Object.values(data).filter(b => b.firstEntry);
+            
+            if (batches.length === 0) {
+                return '<div class="flex items-center justify-center h-full text-gray-500">No timeline data available</div>';
+            }
+            
+            const dates = batches.map(b => new Date(b.firstEntry));
+            const minDate = new Date(Math.min(...dates));
+            const maxDate = new Date(Math.max(...dates));
+            const dateRange = maxDate - minDate;
+            
+            if (dateRange === 0) {
+                return '<div class="flex items-center justify-center h-full text-gray-500">Insufficient date range for timeline</div>';
+            }
+            
+            let svg = `
+                <svg width="100%" height="100%" viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
+                    <text x="200" y="20" text-anchor="middle" font-size="14" font-weight="bold">Production Timeline</text>
+                    <line x1="50" y1="150" x2="350" y2="150" stroke="#cbd5e1" stroke-width="2" />
+            `;
+            
+            // Draw timeline points
+            batches.forEach(batch => {
+                try {
+                    const date = new Date(batch.firstEntry);
+                    const x = 50 + ((date - minDate) / dateRange) * 300;
+                    
+                    svg += `
+                        <circle cx="${x}" cy="150" r="6" fill="#3b82f6" />
+                        <text x="${x}" y="170" text-anchor="middle" font-size="10">${batch.prefix}</text>
+                        <text x="${x}" y="130" text-anchor="middle" font-size="9">${date.toLocaleDateString('id-ID', {month: 'short', day: 'numeric'})}</text>
+                    `;
+                } catch (e) {
+                    console.warn('Error processing date for timeline:', batch.firstEntry);
+                }
+            });
+            
+            // Add axis labels
+            svg += `
+                <text x="50" y="190" text-anchor="middle" font-size="10">${minDate.toLocaleDateString('id-ID', {month: 'short', day: 'numeric', year: 'numeric'})}</text>
+                <text x="350" y="190" text-anchor="middle" font-size="10">${maxDate.toLocaleDateString('id-ID', {month: 'short', day: 'numeric', year: 'numeric'})}</text>
+            `;
+            
+            svg += '</svg>';
+            return svg;
         }
-      }
-    });
-  </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'965d767223acea85',t:'MTc1MzYzMzIxMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+
+        function createSimplePieChart(type) {
+            // Create a simple SVG pie chart based on the type
+            let data = [];
+            let title = '';
+            
+            if (type === 'shrimpType') {
+                title = 'Shrimp Types';
+                const types = {};
+                inventoryData.forEach(item => {
+                    if (item.nama) {
+                        if (!types[item.nama]) types[item.nama] = 0;
+                        types[item.nama] += item.kg || 0;
+                    }
+                });
+                data = Object.entries(types).map(([name, value]) => ({ name, value }));
+            } else if (type === 'size') {
+                title = 'Size Distribution';
+                const sizes = {};
+                inventoryData.forEach(item => {
+                    if (item.size) {
+                        if (!sizes[item.size]) sizes[item.size] = 0;
+                        sizes[item.size] += item.kg || 0;
+                    }
+                });
+                data = Object.entries(sizes).map(([name, value]) => ({ name, value }));
+            } else if (type === 'location') {
+                title = 'Storage Locations';
+                const locations = {};
+                inventoryData.forEach(item => {
+                    if (item.lokasi) {
+                        if (!locations[item.lokasi]) locations[item.lokasi] = 0;
+                        locations[item.lokasi] += item.kg || 0;
+                    }
+                });
+                data = Object.entries(locations).map(([name, value]) => ({ name, value }));
+            } else if (type === 'packing') {
+                title = 'Packing Styles';
+                const packing = {};
+                inventoryData.forEach(item => {
+                    if (item.packing) {
+                        if (!packing[item.packing]) packing[item.packing] = 0;
+                        packing[item.packing] += item.kg || 0;
+                    }
+                });
+                data = Object.entries(packing).map(([name, value]) => ({ name, value }));
+            } else if (type === 'brand') {
+                title = 'Brand Distribution';
+                const brands = {};
+                inventoryData.forEach(item => {
+                    if (item.brand) {
+                        if (!brands[item.brand]) brands[item.brand] = 0;
+                        brands[item.brand] += item.kg || 0;
+                    }
+                });
+                data = Object.entries(brands).map(([name, value]) => ({ name, value }));
+            }
+            
+            // Sort data by value
+            data.sort((a, b) => b.value - a.value);
+            
+            // Limit to top 8 for readability
+            data = data.slice(0, 8);
+            
+            // Calculate total for percentages
+            const total = data.reduce((sum, item) => sum + item.value, 0);
+            
+            if (data.length === 0 || total === 0) {
+                return '<div class="flex items-center justify-center h-full text-gray-500">No data available</div>';
+            }
+            
+            // Generate SVG pie chart
+            let svg = `
+                <svg width="100%" height="100%" viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
+                    <text x="200" y="20" text-anchor="middle" font-size="14" font-weight="bold">${title}</text>
+            `;
+            
+            // Colors for pie slices
+            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6'];
+            
+            // Draw pie chart
+            let startAngle = 0;
+            const centerX = 100;
+            const centerY = 100;
+            const radius = 60;
+            
+            data.forEach((item, index) => {
+                const percentage = item.value / total;
+                const endAngle = startAngle + (percentage * 2 * Math.PI);
+                
+                // Calculate arc path
+                const x1 = centerX + radius * Math.cos(startAngle);
+                const y1 = centerY + radius * Math.sin(startAngle);
+                const x2 = centerX + radius * Math.cos(endAngle);
+                const y2 = centerY + radius * Math.sin(endAngle);
+                
+                // Create arc path
+                const largeArcFlag = percentage > 0.5 ? 1 : 0;
+                const pathData = [
+                    `M ${centerX} ${centerY}`,
+                    `L ${x1} ${y1}`,
+                    `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+                    'Z'
+                ].join(' ');
+                
+                svg += `<path d="${pathData}" fill="${colors[index % colors.length]}" />`;
+                
+                // Update start angle for next slice
+                startAngle = endAngle;
+            });
+            
+            // Add legend
+            data.forEach((item, index) => {
+                const y = 70 + (index * 20);
+                const percentage = ((item.value / total) * 100).toFixed(1);
+                
+                svg += `
+                    <rect x="200" y="${y - 10}" width="10" height="10" fill="${colors[index % colors.length]}" />
+                    <text x="215" y="${y}" font-size="12">${item.name} (${percentage}%)</text>
+                `;
+            });
+            
+            svg += '</svg>';
+            return svg;
+        }
+
+        function initializeCharts() {
+            // This prepares the data for charts
+            processProductionCodes();
+        }
+
+        function showLoading() {
+            loadingState.classList.remove('hidden');
+            errorState.classList.add('hidden');
+            dataContainer.classList.add('hidden');
+        }
+
+        function showError(message) {
+            loadingState.classList.add('hidden');
+            errorState.classList.remove('hidden');
+            dataContainer.classList.add('hidden');
+            
+            document.getElementById('errorMessage').textContent = message || 'Unable to load data. Please try again.';
+        }
+
+        function showData() {
+            loadingState.classList.add('hidden');
+            errorState.classList.add('hidden');
+            dataContainer.classList.remove('hidden');
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9664a9dbc45ea3d9',t:'MTc1MzcwODcxNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
