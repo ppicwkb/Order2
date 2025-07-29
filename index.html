@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard CS WKB</title>
+    <title>Dashboard Stok Produk - Optimized</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -44,7 +44,7 @@
         <button onclick="UI.toggleSidebar()" class="text-gray-600 hover:text-gray-800">
             <i class="fas fa-bars text-xl"></i>
         </button>
-        <h1 class="text-lg font-bold text-gray-800">📊 Dashboard WKB</h1>
+        <h1 class="text-lg font-bold text-gray-800">📊 Dashboard Stok</h1>
         <div class="w-6"></div>
     </div>
 
@@ -82,7 +82,7 @@
         
         <div class="absolute bottom-4 left-4 right-4">
             <div class="bg-blue-50 p-4 rounded-lg">
-                <p class="text-sm text-blue-600">📡 Data dari Gus amuidz</p>
+                <p class="text-sm text-blue-600">📡 Data dari Google Sheets</p>
                 <p class="text-xs text-blue-500 mt-1">Sheet: WKB - Auto refresh</p>
                 <div class="flex items-center mt-2">
                     <div id="connectionStatus" class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
@@ -220,7 +220,46 @@
 
         <!-- Other Sections (Simplified) -->
         <div id="rekap-po-section" class="section hidden">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">📁 Rekap per PO</h2>
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">📁 Rekap per PO</h2>
+                    <p class="text-gray-600 mt-1">Total <span id="totalPOCount" class="font-semibold text-blue-600">0</span> PO ditemukan</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm text-gray-500">Menampilkan</div>
+                    <div class="text-lg font-bold text-green-600" id="displayedPOCount">0</div>
+                    <div class="text-sm text-gray-500">PO teratas</div>
+                </div>
+            </div>
+            
+            <!-- PO Statistics -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white p-4 rounded-lg shadow text-center">
+                    <div class="text-2xl font-bold text-blue-600" id="totalPOItems">0</div>
+                    <div class="text-sm text-gray-600">Total Item</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow text-center">
+                    <div class="text-2xl font-bold text-green-600" id="totalPOKg">0</div>
+                    <div class="text-sm text-gray-600">Total Kg</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow text-center">
+                    <div class="text-2xl font-bold text-purple-600" id="avgItemsPerPO">0</div>
+                    <div class="text-sm text-gray-600">Rata-rata Item/PO</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow text-center">
+                    <div class="text-2xl font-bold text-orange-600" id="avgKgPerPO">0</div>
+                    <div class="text-sm text-gray-600">Rata-rata Kg/PO</div>
+                </div>
+            </div>
+
+            <!-- Show All POs Button -->
+            <div class="mb-4">
+                <button id="showAllPOsBtn" onclick="DataManager.toggleShowAllPOs()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                    <i class="fas fa-eye mr-2"></i>Tampilkan Semua PO
+                </button>
+                <span class="ml-3 text-sm text-gray-500" id="poDisplayInfo">Menampilkan 6 PO teratas</span>
+            </div>
+            
             <div id="poSummary" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- PO cards will be populated by JavaScript -->
             </div>
@@ -293,6 +332,7 @@
             isLoading: false,
             sortColumn: -1,
             sortDirection: 'asc',
+            showAllPOs: false,
 
             async fetchData() {
                 if (this.isLoading) return;
@@ -436,20 +476,70 @@
                 const poSummary = {};
                 this.filteredData.forEach(row => {
                     const po = row[5];
-                    if (!poSummary[po]) poSummary[po] = { items: 0, kg: 0 };
+                    if (!poSummary[po]) poSummary[po] = { items: 0, kg: 0, products: new Set() };
                     poSummary[po].items++;
                     poSummary[po].kg += parseInt(row[7]) || 0;
+                    poSummary[po].products.add(row[1]);
                 });
                 
-                document.getElementById('poSummary').innerHTML = Object.entries(poSummary)
-                    .slice(0, 6)
-                    .map(([po, data]) => `
-                        <div class="bg-white p-6 rounded-lg shadow">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">${po}</h3>
-                            <div class="space-y-2">
-                                <p class="text-sm text-gray-600">Total Item: <span class="font-medium">${data.items}</span></p>
-                                <p class="text-sm text-gray-600">Total Kg: <span class="font-medium">${data.kg.toLocaleString()} kg</span></p>
-                                <p class="text-sm text-gray-600">Status: <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Aktif</span></p>
+                // Sort POs by total kg (descending)
+                const sortedPOs = Object.entries(poSummary).sort((a, b) => b[1].kg - a[1].kg);
+                const totalPOs = sortedPOs.length;
+                const displayLimit = this.showAllPOs ? totalPOs : 6;
+                const displayedPOs = sortedPOs.slice(0, displayLimit);
+                
+                // Update PO statistics
+                const totalPOItems = sortedPOs.reduce((sum, [po, data]) => sum + data.items, 0);
+                const totalPOKg = sortedPOs.reduce((sum, [po, data]) => sum + data.kg, 0);
+                const avgItemsPerPO = totalPOs > 0 ? Math.round(totalPOItems / totalPOs) : 0;
+                const avgKgPerPO = totalPOs > 0 ? Math.round(totalPOKg / totalPOs) : 0;
+                
+                document.getElementById('totalPOCount').textContent = totalPOs;
+                document.getElementById('displayedPOCount').textContent = displayedPOs.length;
+                document.getElementById('totalPOItems').textContent = totalPOItems.toLocaleString();
+                document.getElementById('totalPOKg').textContent = totalPOKg.toLocaleString();
+                document.getElementById('avgItemsPerPO').textContent = avgItemsPerPO;
+                document.getElementById('avgKgPerPO').textContent = avgKgPerPO;
+                
+                // Update button text and info
+                const showAllBtn = document.getElementById('showAllPOsBtn');
+                const displayInfo = document.getElementById('poDisplayInfo');
+                
+                if (this.showAllPOs) {
+                    showAllBtn.innerHTML = '<i class="fas fa-eye-slash mr-2"></i>Tampilkan 6 Teratas';
+                    displayInfo.textContent = `Menampilkan semua ${totalPOs} PO`;
+                } else {
+                    showAllBtn.innerHTML = '<i class="fas fa-eye mr-2"></i>Tampilkan Semua PO';
+                    displayInfo.textContent = `Menampilkan ${Math.min(6, totalPOs)} dari ${totalPOs} PO`;
+                }
+                
+                document.getElementById('poSummary').innerHTML = displayedPOs
+                    .map(([po, data], index) => `
+                        <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow">
+                            <div class="flex justify-between items-start mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">${po}</h3>
+                                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">#${index + 1}</span>
+                            </div>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Total Item:</span>
+                                    <span class="font-medium text-blue-600">${data.items}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Total Kg:</span>
+                                    <span class="font-medium text-green-600">${data.kg.toLocaleString()} kg</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Jenis Produk:</span>
+                                    <span class="font-medium text-purple-600">${data.products.size}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Rata-rata/Item:</span>
+                                    <span class="font-medium text-orange-600">${Math.round(data.kg / data.items)} kg</span>
+                                </div>
+                                <div class="pt-2 border-t">
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Aktif</span>
+                                </div>
                             </div>
                         </div>
                     `).join('');
@@ -496,15 +586,68 @@
                 const product = document.getElementById('productFilter').value;
                 const brand = document.getElementById('brandFilter').value;
                 
+                console.log('Filter applied:', { startDate, endDate, product, brand });
+                
                 this.filteredData = this.stockData.filter(row => {
-                    return (!startDate || row[0] >= startDate) &&
-                           (!endDate || row[0] <= endDate) &&
-                           (!product || row[1] === product) &&
-                           (!brand || row[3] === brand);
+                    let matchesDate = true;
+                    
+                    if (startDate || endDate) {
+                        // Convert row date to comparable format
+                        const rowDate = this.parseDate(row[0]);
+                        const filterStartDate = startDate ? new Date(startDate) : null;
+                        const filterEndDate = endDate ? new Date(endDate) : null;
+                        
+                        if (filterStartDate && rowDate < filterStartDate) {
+                            matchesDate = false;
+                        }
+                        if (filterEndDate && rowDate > filterEndDate) {
+                            matchesDate = false;
+                        }
+                    }
+                    
+                    const matchesProduct = !product || row[1] === product;
+                    const matchesBrand = !brand || row[3] === brand;
+                    
+                    return matchesDate && matchesProduct && matchesBrand;
                 });
+                
+                console.log(`Filtered ${this.filteredData.length} items from ${this.stockData.length} total`);
                 
                 this.currentPage = 1;
                 this.updateUI();
+            },
+
+            parseDate(dateString) {
+                if (!dateString || dateString === '-') return new Date(0);
+                
+                // Try different date formats
+                let date;
+                
+                // Format: YYYY-MM-DD
+                if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    date = new Date(dateString);
+                }
+                // Format: DD/MM/YYYY
+                else if (dateString.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+                    const parts = dateString.split('/');
+                    date = new Date(parts[2], parts[1] - 1, parts[0]);
+                }
+                // Format: DD-MM-YYYY
+                else if (dateString.match(/^\d{2}-\d{2}-\d{4}$/)) {
+                    const parts = dateString.split('-');
+                    date = new Date(parts[2], parts[1] - 1, parts[0]);
+                }
+                // Format: MM/DD/YYYY
+                else if (dateString.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+                    date = new Date(dateString);
+                }
+                else {
+                    // Try to parse as-is
+                    date = new Date(dateString);
+                }
+                
+                // If date is invalid, return epoch
+                return isNaN(date.getTime()) ? new Date(0) : date;
             },
 
             resetFilters() {
@@ -561,6 +704,11 @@
 
             refreshData() {
                 this.fetchData();
+            },
+
+            toggleShowAllPOs() {
+                this.showAllPOs = !this.showAllPOs;
+                this.updateSummaries();
             }
         };
 
@@ -684,19 +832,51 @@
                 this.trendChart = new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
+                        labels: [],
                         datasets: [{
-                            label: 'Stok (kg)',
-                            data: [1200, 1350, 1100, 1400, 1250, 1500, 1300],
+                            label: 'Total Stok (kg)',
+                            data: [],
                             borderColor: '#3B82F6',
                             backgroundColor: 'rgba(59, 130, 246, 0.1)',
                             tension: 0.4,
-                            fill: true
+                            fill: true,
+                            pointBackgroundColor: '#3B82F6',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5
                         }]
                     },
                     options: {
                         responsive: true,
-                        scales: { y: { beginAtZero: true } }
+                        maintainAspectRatio: false,
+                        scales: { 
+                            y: { 
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toLocaleString() + ' kg';
+                                    }
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    maxRotation: 45
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.parsed.y.toLocaleString()} kg`;
+                                    }
+                                }
+                            },
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        }
                     }
                 });
             },
@@ -718,6 +898,58 @@
                 this.brandChart.data.labels = brands;
                 this.brandChart.data.datasets[0].data = values;
                 this.brandChart.update();
+                
+                // Update trend chart with real data
+                this.updateTrendChart();
+            },
+
+            updateTrendChart() {
+                if (!this.trendChart || !DataManager.filteredData.length) return;
+                
+                // Group data by date and calculate daily totals
+                const dailyData = {};
+                DataManager.filteredData.forEach(row => {
+                    const date = row[0];
+                    const kg = parseInt(row[7]) || 0;
+                    
+                    if (date && date !== '-') {
+                        if (!dailyData[date]) dailyData[date] = 0;
+                        dailyData[date] += kg;
+                    }
+                });
+                
+                // Sort dates and get last 7 days of data
+                const sortedDates = Object.keys(dailyData).sort();
+                const last7Days = sortedDates.slice(-7);
+                
+                // If we have less than 7 days, pad with recent dates
+                const labels = [];
+                const data = [];
+                
+                if (last7Days.length > 0) {
+                    // Use actual dates from data
+                    last7Days.forEach(date => {
+                        // Format date for display (DD/MM)
+                        const dateObj = DataManager.parseDate(date);
+                        const formattedDate = `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}`;
+                        labels.push(formattedDate);
+                        data.push(dailyData[date]);
+                    });
+                } else {
+                    // Fallback: show last 7 days even if no data
+                    const today = new Date();
+                    for (let i = 6; i >= 0; i--) {
+                        const date = new Date(today);
+                        date.setDate(today.getDate() - i);
+                        const formattedDate = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+                        labels.push(formattedDate);
+                        data.push(0);
+                    }
+                }
+                
+                this.trendChart.data.labels = labels;
+                this.trendChart.data.datasets[0].data = data;
+                this.trendChart.update();
             }
         };
 
@@ -777,5 +1009,5 @@
             setInterval(() => DataManager.refreshData(), CONFIG.REFRESH_INTERVAL);
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'966d8983a1da4ac4',t:'MTc1MzgwMTc2NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'966dcca3d6b78093',t:'MTc1MzgwNDUxNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
