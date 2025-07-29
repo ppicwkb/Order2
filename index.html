@@ -1,1516 +1,781 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShrimpStock View</title>
+    <title>Dashboard CS WKB - Optimized</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/@tailwindcss/typography@0.5.0/dist/typography.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0f7ff;
-        }
-        .table-container {
-            overflow-x: auto;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-        }
-        th {
-            position: sticky;
-            top: 0;
-            background-color: #0f5e9c;
-            color: white;
-            font-weight: 600;
-            text-align: left;
-            padding: 12px 16px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        th:hover {
-            background-color: #0c4d82;
-        }
-        td {
-            padding: 12px 16px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        tr:nth-child(even) {
-            background-color: #f8fafc;
-        }
-        tr:hover {
-            background-color: #e6f7ff;
-        }
-        .sort-icon {
-            margin-left: 5px;
-        }
-        .search-container {
-            position: relative;
-        }
-        .search-icon {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #64748b;
-        }
-        .search-input {
-            padding-left: 40px;
-        }
-        .filter-dropdown {
-            position: relative;
-            display: inline-block;
-        }
-        .filter-content {
-            display: none;
-            position: absolute;
-            background-color: white;
-            min-width: 200px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-            z-index: 10;
-            border-radius: 6px;
-            padding: 8px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .filter-dropdown:hover .filter-content {
-            display: block;
-        }
-        .loading-spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-left-color: #0f5e9c;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * { box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; }
+        
+        .sidebar { transition: transform 0.3s ease; }
+        .sidebar-item { transition: all 0.2s ease; }
+        .sidebar-item:hover { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .table-row:hover { background-color: #f8fafc; }
+        .loading-spinner { animation: spin 1s linear infinite; }
+        
         @keyframes spin {
-            to {
-                transform: rotate(360deg);
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0 !important; }
+            .mobile-overlay { 
+                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(0,0,0,0.5); z-index: 15; display: none;
             }
-        }
-        .badge {
-            padding: 4px 8px;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        .badge-blue {
-            background-color: #dbeafe;
-            color: #1e40af;
-        }
-        .badge-green {
-            background-color: #dcfce7;
-            color: #166534;
-        }
-        .badge-yellow {
-            background-color: #fef9c3;
-            color: #854d0e;
-        }
-        .badge-red {
-            background-color: #fee2e2;
-            color: #991b1b;
-        }
-        .badge-purple {
-            background-color: #f3e8ff;
-            color: #6b21a8;
-        }
-        .badge-orange {
-            background-color: #ffedd5;
-            color: #9a3412;
-        }
-        .tooltip {
-            position: relative;
-            display: inline-block;
-            cursor: help;
-        }
-        .tooltip .tooltiptext {
-            visibility: hidden;
-            width: 200px;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 8px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
-        }
-        .batch-group {
-            background-color: #f0f9ff;
-            border-left: 3px solid #0369a1;
-        }
-        .tab-button {
-            padding: 8px 16px;
-            border-radius: 8px 8px 0 0;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-        .tab-button.active {
-            background-color: white;
-            border-bottom: 2px solid #0f5e9c;
-            color: #0f5e9c;
-            font-weight: 600;
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
+            .mobile-overlay.show { display: block; }
         }
     </style>
 </head>
-<body>
-    <div class="min-h-screen">
-        <header class="bg-gradient-to-r from-blue-800 to-blue-600 text-white shadow-lg">
-            <div class="container mx-auto px-4 py-6">
-                <div class="flex justify-between items-center">
-                    <div class="flex items-center space-x-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
-                            <path d="M14 9l-5 5-2-2"/>
-                        </svg>
-                        <h1 class="text-2xl md:text-3xl font-bold">ShrimpStock View</h1>
-                    </div>
-                    <div class="text-sm md:text-base">
-                        <span id="lastUpdated" class="opacity-80">Last updated: Loading...</span>
-                    </div>
+<body class="bg-gray-50">
+    <!-- Mobile Header -->
+    <div class="md:hidden bg-white shadow-md px-4 py-3 flex items-center justify-between">
+        <button onclick="UI.toggleSidebar()" class="text-gray-600 hover:text-gray-800">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
+        <h1 class="text-lg font-bold text-gray-800">📊 Dashboard WKB</h1>
+        <div class="w-6"></div>
+    </div>
+
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" onclick="UI.closeSidebar()"></div>
+
+    <!-- Sidebar -->
+    <div class="sidebar fixed left-0 top-0 h-full w-64 bg-white shadow-lg z-20">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h1 class="text-xl font-bold text-gray-800">📊 Dashboard Stok</h1>
+                <button onclick="UI.closeSidebar()" class="md:hidden text-gray-600 hover:text-gray-800">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+        </div>
+        
+        <nav class="mt-6 px-4 space-y-2">
+            <a href="#" class="sidebar-item flex items-center px-4 py-3 text-white rounded-lg bg-gradient-to-r from-blue-500 to-purple-600" onclick="UI.showSection('dashboard')">
+                <i class="fas fa-chart-line mr-3"></i>Dashboard Stok
+            </a>
+            <a href="#" class="sidebar-item flex items-center px-4 py-3 text-gray-700 rounded-lg" onclick="UI.showSection('rekap-po')">
+                <i class="fas fa-folder mr-3"></i>Rekap per PO
+            </a>
+            <a href="#" class="sidebar-item flex items-center px-4 py-3 text-gray-700 rounded-lg" onclick="UI.showSection('rekap-brand')">
+                <i class="fas fa-tags mr-3"></i>Rekap per Brand
+            </a>
+            <a href="#" class="sidebar-item flex items-center px-4 py-3 text-gray-700 rounded-lg" onclick="UI.showSection('stok-hari-ini')">
+                <i class="fas fa-box mr-3"></i>Stok Hari Ini
+            </a>
+            <a href="#" class="sidebar-item flex items-center px-4 py-3 text-gray-700 rounded-lg" onclick="UI.showSection('grafik')">
+                <i class="fas fa-chart-bar mr-3"></i>Grafik Ringkas
+            </a>
+        </nav>
+        
+        <div class="absolute bottom-4 left-4 right-4">
+            <div class="bg-blue-50 p-4 rounded-lg">
+                <p class="text-sm text-blue-600">📡 Data dari Google Sheets</p>
+                <p class="text-xs text-blue-500 mt-1">Sheet: WKB - Auto refresh</p>
+                <div class="flex items-center mt-2">
+                    <div id="connectionStatus" class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                    <span class="text-xs text-gray-500">Terhubung</span>
                 </div>
             </div>
-        </header>
+        </div>
+    </div>
 
-        <main class="container mx-auto px-4 py-8">
-            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-                <!-- Tab Navigation -->
-                <div class="flex border-b border-gray-200 mb-6">
-                    <button id="tabInventory" class="tab-button active">Inventory View</button>
-                    <button id="tabBatch" class="tab-button">Batch Analysis</button>
-                    <button id="tabStats" class="tab-button">Statistics</button>
+    <!-- Main Content -->
+    <div class="main-content ml-64 p-4 md:p-6 pt-20 md:pt-6">
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" class="section">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Dashboard Stok Produk</h2>
+                <p class="text-gray-600">Kelola dan pantau stok produk secara real-time</p>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <div class="text-2xl font-bold text-blue-600" id="totalItems">-</div>
+                    <div class="text-sm text-gray-600">Total Item</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <div class="text-2xl font-bold text-green-600" id="totalKg">-</div>
+                    <div class="text-sm text-gray-600">Total Kg</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <div class="text-2xl font-bold text-purple-600" id="uniqueProducts">-</div>
+                    <div class="text-sm text-gray-600">Produk</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <div class="text-2xl font-bold text-orange-600" id="uniqueBrands">-</div>
+                    <div class="text-sm text-gray-600">Brand</div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="bg-white p-4 rounded-lg shadow mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai</label>
+                        <input type="date" id="startDate" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Akhir</label>
+                        <input type="date" id="endDate" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Produk</label>
+                        <select id="productFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">Semua Produk</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Brand</label>
+                        <select id="brandFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">Semua Brand</option>
+                        </select>
+                    </div>
                 </div>
                 
-                <!-- Inventory Tab Content -->
-                <div id="inventoryContent" class="tab-content active">
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 space-y-4 md:space-y-0">
-                        <div class="search-container w-full md:w-96">
-                            <i class="fas fa-search search-icon"></i>
-                            <input type="text" id="searchInput" placeholder="Search anything..." class="search-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        
-                        <div class="flex flex-wrap items-center gap-3">
-                            <div class="filter-dropdown">
-                                <button class="flex items-center space-x-1 bg-blue-50 hover:bg-blue-100 text-blue-800 px-4 py-2 rounded-lg transition">
-                                    <i class="fas fa-filter"></i>
-                                    <span>Filter</span>
-                                </button>
-                                <div class="filter-content right-0">
-                                    <div class="p-2">
-                                        <h3 class="font-semibold mb-2">Production Code</h3>
-                                        <div id="batchFilters" class="space-y-1">
-                                            <!-- Will be populated dynamically -->
-                                        </div>
-                                    </div>
-                                    <div class="p-2 border-t">
-                                        <h3 class="font-semibold mb-2">Size</h3>
-                                        <div id="sizeFilters" class="space-y-1">
-                                            <!-- Will be populated dynamically -->
-                                        </div>
-                                    </div>
-                                    <div class="p-2 border-t">
-                                        <h3 class="font-semibold mb-2">Packing Style</h3>
-                                        <div id="packingFilters" class="space-y-1">
-                                            <!-- Will be populated dynamically -->
-                                        </div>
-                                    </div>
-                                    <div class="p-2 border-t">
-                                        <h3 class="font-semibold mb-2">Location</h3>
-                                        <div id="locationFilters" class="space-y-1">
-                                            <!-- Will be populated dynamically -->
-                                        </div>
-                                    </div>
-                                    <div class="p-2 border-t">
-                                        <h3 class="font-semibold mb-2">Brand</h3>
-                                        <div id="brandFilters" class="space-y-1">
-                                            <!-- Will be populated dynamically -->
-                                        </div>
-                                    </div>
-                                    <div class="p-2 border-t">
-                                        <button id="clearFilters" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-1 rounded text-sm">
-                                            Clear All Filters
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <button id="exportPdf" class="flex items-center space-x-1 bg-green-50 hover:bg-green-100 text-green-800 px-4 py-2 rounded-lg transition">
-                                <i class="fas fa-file-pdf"></i>
-                                <span>Export PDF</span>
-                            </button>
-                            
-                            <button id="refreshData" class="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
-                                <i class="fas fa-sync-alt"></i>
-                                <span>Refresh</span>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div id="statsBar" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-                        <div class="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                            <h3 class="text-blue-800 text-sm font-medium">Total Products</h3>
-                            <p id="totalProducts" class="text-2xl font-bold text-blue-900">-</p>
-                        </div>
-                        <div class="bg-green-50 rounded-lg p-4 border border-green-100">
-                            <h3 class="text-green-800 text-sm font-medium">Total Quantity</h3>
-                            <p id="totalQuantity" class="text-2xl font-bold text-green-900">-</p>
-                        </div>
-                        <div class="bg-yellow-50 rounded-lg p-4 border border-yellow-100">
-                            <h3 class="text-yellow-800 text-sm font-medium">Total Weight (kg)</h3>
-                            <p id="totalWeight" class="text-2xl font-bold text-yellow-900">-</p>
-                        </div>
-                        <div class="bg-purple-50 rounded-lg p-4 border border-purple-100">
-                            <h3 class="text-purple-800 text-sm font-medium">Unique Batches</h3>
-                            <p id="uniqueBatches" class="text-2xl font-bold text-purple-900">-</p>
-                        </div>
-                        <div class="bg-orange-50 rounded-lg p-4 border border-orange-100">
-                            <h3 class="text-orange-800 text-sm font-medium">Unique Brands</h3>
-                            <p id="uniqueBrands" class="text-2xl font-bold text-orange-900">-</p>
-                        </div>
-                    </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="DataManager.applyFilters()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-filter mr-2"></i>Filter
+                    </button>
+                    <button onclick="DataManager.resetFilters()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-undo mr-2"></i>Reset
+                    </button>
+                    <button onclick="DataManager.refreshData()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                    <button onclick="Utils.exportToPDF()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-file-pdf mr-2"></i>Export PDF
+                    </button>
+                </div>
+            </div>
 
-                    <div id="loadingState" class="flex flex-col items-center justify-center py-12">
-                        <div class="loading-spinner mb-4"></div>
-                        <p class="text-gray-600">Loading inventory data...</p>
+            <!-- Data Table -->
+            <div class="bg-white rounded-lg shadow overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="DataManager.sortTable(0)">
+                                    Tanggal <i class="fas fa-sort ml-1"></i>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="DataManager.sortTable(1)">
+                                    Produk <i class="fas fa-sort ml-1"></i>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="DataManager.sortTable(2)">
+                                    Packing <i class="fas fa-sort ml-1"></i>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="DataManager.sortTable(3)">
+                                    Brand <i class="fas fa-sort ml-1"></i>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="DataManager.sortTable(4)">
+                                    Kode <i class="fas fa-sort ml-1"></i>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="DataManager.sortTable(5)">
+                                    No. PO <i class="fas fa-sort ml-1"></i>
+                                </th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="DataManager.sortTable(6)">
+                                    Jumlah mc <i class="fas fa-sort ml-1"></i>
+                                </th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="DataManager.sortTable(7)">
+                                    Jumlah Kg <i class="fas fa-sort ml-1"></i>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="stockTableBody" class="divide-y divide-gray-200">
+                            <!-- Data populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="bg-gray-50 px-4 py-3 flex items-center justify-between border-t">
+                    <div class="text-sm text-gray-700">
+                        Menampilkan <span id="showingStart">0</span> - <span id="showingEnd">0</span> dari <span id="totalRecords">0</span>
                     </div>
-
-                    <div id="errorState" class="hidden bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-                        <svg class="mx-auto h-12 w-12 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <h3 class="mt-2 text-lg font-medium text-red-800">Unable to load data</h3>
-                        <p class="mt-1 text-red-600" id="errorMessage">Please check your connection and try again.</p>
-                        <button id="retryButton" class="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition">
-                            Try Again
+                    <div class="flex space-x-1">
+                        <button onclick="DataManager.previousPage()" class="px-3 py-1 bg-white border rounded hover:bg-gray-50" id="prevBtn">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span id="pageInfo" class="px-3 py-1 bg-blue-600 text-white rounded">1</span>
+                        <button onclick="DataManager.nextPage()" class="px-3 py-1 bg-white border rounded hover:bg-gray-50" id="nextBtn">
+                            <i class="fas fa-chevron-right"></i>
                         </button>
                     </div>
-
-                    <div id="dataContainer" class="hidden">
-                        <div class="table-container">
-                            <table id="inventoryTable" class="min-w-full">
-                                <thead>
-                                    <tr>
-                                        <th data-sort="kode">Kode Produksi <span class="sort-icon">↕</span></th>
-                                        <th data-sort="nama">Nama Udang <span class="sort-icon">↕</span></th>
-                                        <th data-sort="size">Size <span class="sort-icon">↕</span></th>
-                                        <th data-sort="packing">Packing Style <span class="sort-icon">↕</span></th>
-                                        <th data-sort="brand">Brand <span class="sort-icon">↕</span></th>
-                                        <th data-sort="tanggal">Tanggal Masuk <span class="sort-icon">↕</span></th>
-                                        <th data-sort="qty">Jumlah (Qty) <span class="sort-icon">↕</span></th>
-                                        <th data-sort="kg">Jumlah (kg) <span class="sort-icon">↕</span></th>
-                                        <th data-sort="lokasi">Lokasi <span class="sort-icon">↕</span></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Data will be populated here -->
-                                </tbody>
-                            </table>
-                        </div>
-                        
-                        <div class="mt-4 text-center text-gray-500 text-sm">
-                            <p id="resultCount">Showing 0 of 0 items</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Batch Analysis Tab Content -->
-                <div id="batchContent" class="tab-content">
-                    <div class="mb-6">
-                        <h2 class="text-xl font-semibold text-gray-800 mb-2">Production Batch Analysis</h2>
-                        <p class="text-gray-600">Analyze inventory by production batch codes</p>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div class="bg-white rounded-lg border border-gray-200 p-4">
-                            <h3 class="font-semibold text-gray-800 mb-3">Batch Distribution</h3>
-                            <div id="batchChart" class="h-64 flex items-center justify-center">
-                                <p class="text-gray-500">Loading batch data...</p>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white rounded-lg border border-gray-200 p-4">
-                            <h3 class="font-semibold text-gray-800 mb-3">Production Timeline</h3>
-                            <div id="timelineChart" class="h-64 flex items-center justify-center">
-                                <p class="text-gray-500">Loading timeline data...</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white rounded-lg border border-gray-200 p-4">
-                        <h3 class="font-semibold text-gray-800 mb-3">Batch Details</h3>
-                        <div class="overflow-x-auto">
-                            <table id="batchTable" class="min-w-full">
-                                <thead>
-                                    <tr>
-                                        <th class="px-4 py-2 bg-gray-100">Batch Prefix</th>
-                                        <th class="px-4 py-2 bg-gray-100">Products</th>
-                                        <th class="px-4 py-2 bg-gray-100">Total Qty</th>
-                                        <th class="px-4 py-2 bg-gray-100">Total Weight (kg)</th>
-                                        <th class="px-4 py-2 bg-gray-100">First Entry</th>
-                                        <th class="px-4 py-2 bg-gray-100">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="batchTableBody">
-                                    <!-- Batch data will be populated here -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Statistics Tab Content -->
-                <div id="statsContent" class="tab-content">
-                    <div class="mb-6">
-                        <h2 class="text-xl font-semibold text-gray-800 mb-2">Inventory Statistics</h2>
-                        <p class="text-gray-600">Detailed analysis of your shrimp inventory</p>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div class="bg-white rounded-lg border border-gray-200 p-4">
-                            <h3 class="font-semibold text-gray-800 mb-3">Inventory by Shrimp Type</h3>
-                            <div id="shrimpTypeChart" class="h-64 flex items-center justify-center">
-                                <p class="text-gray-500">Loading chart data...</p>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white rounded-lg border border-gray-200 p-4">
-                            <h3 class="font-semibold text-gray-800 mb-3">Inventory by Size</h3>
-                            <div id="sizeChart" class="h-64 flex items-center justify-center">
-                                <p class="text-gray-500">Loading chart data...</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-white rounded-lg border border-gray-200 p-4">
-                            <h3 class="font-semibold text-gray-800 mb-3">Storage Location Distribution</h3>
-                            <div id="locationChart" class="h-64 flex items-center justify-center">
-                                <p class="text-gray-500">Loading chart data...</p>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white rounded-lg border border-gray-200 p-4">
-                            <h3 class="font-semibold text-gray-800 mb-3">Packing Style Distribution</h3>
-                            <div id="packingChart" class="h-64 flex items-center justify-center">
-                                <p class="text-gray-500">Loading chart data...</p>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white rounded-lg border border-gray-200 p-4">
-                            <h3 class="font-semibold text-gray-800 mb-3">Brand Distribution</h3>
-                            <div id="brandChart" class="h-64 flex items-center justify-center">
-                                <p class="text-gray-500">Loading chart data...</p>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
-        </main>
+        </div>
 
-        <footer class="bg-gray-800 text-white py-6">
-            <div class="container mx-auto px-4 text-center">
-                <p>© 2023 ShrimpStock View - Inventory Monitoring System</p>
-                <p class="text-gray-400 text-sm mt-2">Data is read-only and synchronized with Google Sheets</p>
+        <!-- Other Sections (Simplified) -->
+        <div id="rekap-po-section" class="section hidden">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">📁 Rekap per PO</h2>
+            <div id="poSummary" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- PO cards will be populated by JavaScript -->
             </div>
-        </footer>
+        </div>
+
+        <div id="rekap-brand-section" class="section hidden">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">🏷️ Rekap per Brand</h2>
+            <div id="brandSummary" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Brand cards will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <div id="stok-hari-ini-section" class="section hidden">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">📦 Stok Hari Ini</h2>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-blue-600" id="todayItems">0</div>
+                        <div class="text-sm text-gray-600">Total Item</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-green-600" id="todayKg">0</div>
+                        <div class="text-sm text-gray-600">Total Kg</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-purple-600" id="todayProducts">0</div>
+                        <div class="text-sm text-gray-600">Produk Berbeda</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-orange-600" id="todayBrands">0</div>
+                        <div class="text-sm text-gray-600">Brand</div>
+                    </div>
+                </div>
+                <div class="text-center text-gray-500">
+                    <p>Data per tanggal: <span id="currentDate"></span></p>
+                </div>
+            </div>
+        </div>
+
+        <div id="grafik-section" class="section hidden">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">📊 Grafik Ringkas</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Stok per Brand</h3>
+                    <canvas id="brandChart" width="400" height="200"></canvas>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Trend Stok Mingguan</h3>
+                    <canvas id="trendChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Google Sheets configuration
-        const SHEET_ID = '1UChSAhNdvwz0KIjJXuNBQoql1VMyUpamlOGlBF1sRCY';
-        const SHEET_NAME = 'DATA'; // Using 'DATA' sheet
-        const SHEET_RANGE = 'A:J'; // Include column J for last updated timestamp
-        const LAST_UPDATED_CELL = 'J1'; // Cell containing last updated timestamp
-        
-        // DOM elements
-        const loadingState = document.getElementById('loadingState');
-        const errorState = document.getElementById('errorState');
-        const dataContainer = document.getElementById('dataContainer');
-        const inventoryTable = document.getElementById('inventoryTable');
-        const searchInput = document.getElementById('searchInput');
-        const resultCount = document.getElementById('resultCount');
-        const lastUpdated = document.getElementById('lastUpdated');
-        const exportPdfBtn = document.getElementById('exportPdf');
-        const refreshBtn = document.getElementById('refreshData');
-        const retryButton = document.getElementById('retryButton');
-        const clearFiltersBtn = document.getElementById('clearFilters');
-        
-        // Stats elements
-        const totalProducts = document.getElementById('totalProducts');
-        const totalQuantity = document.getElementById('totalQuantity');
-        const totalWeight = document.getElementById('totalWeight');
-        const uniqueBatches = document.getElementById('uniqueBatches');
-        const uniqueBrands = document.getElementById('uniqueBrands');
-        
-        // Filter containers
-        const batchFilters = document.getElementById('batchFilters');
-        const sizeFilters = document.getElementById('sizeFilters');
-        const packingFilters = document.getElementById('packingFilters');
-        const locationFilters = document.getElementById('locationFilters');
-        const brandFilters = document.getElementById('brandFilters');
-        
-        // Tab elements
-        const tabInventory = document.getElementById('tabInventory');
-        const tabBatch = document.getElementById('tabBatch');
-        const tabStats = document.getElementById('tabStats');
-        const inventoryContent = document.getElementById('inventoryContent');
-        const batchContent = document.getElementById('batchContent');
-        const statsContent = document.getElementById('statsContent');
-
-        // State variables
-        let inventoryData = [];
-        let filteredData = [];
-        let currentSort = { column: null, direction: 'asc' };
-        let activeFilters = {
-            batch: [],
-            size: [],
-            packing: [],
-            lokasi: [],
-            brand: []
-        };
-        let batchAnalysis = {};
-        let lastUpdatedTimestamp = "";
-        
-        // Column mapping - adjust these to match your actual column names in the DATA sheet
-        const columnMapping = {
-            'kode': 'Kode Produksi',
-            'nama': 'Nama Udang',
-            'size': 'Size',
-            'packing': 'Packing Style',
-            'brand': 'Brand',
-            'tanggal': 'Tanggal Masuk',
-            'qty': 'Jumlah (Qty)',
-            'kg': 'Jumlah (kg)',
-            'lokasi': 'Lokasi'
+        // Configuration
+        const CONFIG = {
+            SHEET_ID: '18ga4stLBiKWujBryPQHUHrUzgYjprFJEKvUWSd3Zcks',
+            SHEET_NAME: 'WKB',
+            API_KEY: 'AIzaSyBBY9oqeEjjpVnIXOhdkhR6xuTsCr5gYU8',
+            ITEMS_PER_PAGE: 10,
+            REFRESH_INTERVAL: 300000 // 5 minutes
         };
 
-        // Initialize the application
-        document.addEventListener('DOMContentLoaded', () => {
-            initApp();
-        });
+        // Data Management
+        const DataManager = {
+            stockData: [],
+            filteredData: [],
+            currentPage: 1,
+            isLoading: false,
+            sortColumn: -1,
+            sortDirection: 'asc',
 
-        function initApp() {
-            fetchGoogleSheetsData();
-            setupEventListeners();
-        }
-
-        function setupEventListeners() {
-            // Search functionality
-            searchInput.addEventListener('input', handleSearch);
-            
-            // Table header sorting
-            const headers = inventoryTable.querySelectorAll('th');
-            headers.forEach(header => {
-                header.addEventListener('click', () => {
-                    const column = header.getAttribute('data-sort');
-                    handleSort(column);
-                });
-            });
-            
-            // Export to PDF
-            exportPdfBtn.addEventListener('click', exportToPdf);
-            
-            // Refresh data
-            refreshBtn.addEventListener('click', fetchGoogleSheetsData);
-            
-            // Retry on error
-            retryButton.addEventListener('click', fetchGoogleSheetsData);
-            
-            // Clear all filters
-            clearFiltersBtn.addEventListener('click', clearAllFilters);
-            
-            // Tab navigation
-            tabInventory.addEventListener('click', () => switchTab('inventory'));
-            tabBatch.addEventListener('click', () => switchTab('batch'));
-            tabStats.addEventListener('click', () => switchTab('stats'));
-        }
-
-        function fetchGoogleSheetsData() {
-            showLoading();
-            
-            // Use the published Google Sheet as CSV
-            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}&range=${SHEET_RANGE}`;
-            
-            fetch(url)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.text();
-                })
-                .then(csvText => {
-                    // Parse CSV to JSON
-                    const parsedData = parseCSV(csvText);
-                    
-                    // Check if we have data
-                    if (parsedData.length === 0) {
-                        throw new Error('No data found in the spreadsheet');
-                    }
-                    
-                    // Log the first row to debug column names
-                    console.log("First row data:", parsedData[0]);
-                    
-                    inventoryData = parsedData;
-                    filteredData = [...inventoryData];
-                    
-                    // Process production codes
-                    processProductionCodes();
-                    
-                    // Get last updated timestamp from cell M1
-                    fetchLastUpdatedTimestamp();
-                    
-                    populateFilters();
-                    updateStats();
-                    renderTable();
-                    showData();
-                    
-                    // Initialize charts for other tabs
-                    initializeCharts();
-                })
-                .catch(error => {
-                    console.error('Error fetching data:', error);
-                    showError(error.message);
-                });
-        }
-
-        function fetchLastUpdatedTimestamp() {
-            // Fetch the last updated timestamp from cell M1
-            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}&range=${LAST_UPDATED_CELL}`;
-            
-            fetch(url)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Could not fetch last updated timestamp');
-                    }
-                    return response.text();
-                })
-                .then(csvText => {
-                    // Parse the CSV response to get the timestamp
-                    if (csvText && csvText.trim()) {
-                        // Remove quotes if present
-                        lastUpdatedTimestamp = csvText.replace(/^"|"$/g, '').trim();
-                    } else {
-                        // Fallback to current time if not available
-                        lastUpdatedTimestamp = new Date().toLocaleString();
-                    }
-                    
-                    updateLastUpdated();
-                })
-                .catch(error => {
-                    console.warn('Error fetching last updated timestamp:', error);
-                    // Fallback to current time
-                    lastUpdatedTimestamp = new Date().toLocaleString();
-                    updateLastUpdated();
-                });
-        }
-
-        function parseCSV(csvText) {
-            const lines = csvText.split('\n');
-            if (lines.length <= 1) {
-                return [];
-            }
-            
-            const headers = lines[0].split(',').map(header => {
-                // Remove quotes and trim whitespace
-                return header.replace(/^"|"$/g, '').trim();
-            });
-            
-            console.log("CSV Headers:", headers);
-            
-            // Create a reverse mapping from actual headers to our internal field names
-            const headerToField = {};
-            for (const [field, header] of Object.entries(columnMapping)) {
-                headerToField[header.toLowerCase()] = field;
-            }
-            
-            return lines.slice(1).filter(line => line.trim() !== '').map(line => {
-                // Handle quoted values with commas inside
-                const values = [];
-                let inQuotes = false;
-                let currentValue = '';
+            async fetchData() {
+                if (this.isLoading) return;
                 
-                for (let i = 0; i < line.length; i++) {
-                    const char = line[i];
-                    
-                    if (char === '"' && (i === 0 || line[i-1] !== '\\')) {
-                        inQuotes = !inQuotes;
-                    } else if (char === ',' && !inQuotes) {
-                        values.push(currentValue);
-                        currentValue = '';
-                    } else {
-                        currentValue += char;
-                    }
-                }
+                this.isLoading = true;
+                UI.showLoading();
                 
-                // Add the last value
-                values.push(currentValue);
-                
-                const entry = {};
-                
-                // Map CSV values to our internal field names
-                headers.forEach((header, index) => {
-                    if (index < values.length) {
-                        let value = values[index].replace(/^"|"$/g, '').trim(); // Remove quotes
-                        
-                        // Find the corresponding internal field name
-                        const fieldName = headerToField[header.toLowerCase()] || header.toLowerCase().replace(/\s+/g, '_');
-                        
-                        // Convert numeric values
-                        if (fieldName === 'qty' || fieldName === 'kg') {
-                            value = parseFloat(value) || 0;
-                        }
-                        
-                        // Handle date format
-                        if (fieldName === 'tanggal') {
-                            // Try to parse the date
-                            try {
-                                const dateParts = value.split('/');
-                                if (dateParts.length === 3) {
-                                    // Assuming MM/DD/YYYY format
-                                    const month = parseInt(dateParts[0]);
-                                    const day = parseInt(dateParts[1]);
-                                    const year = parseInt(dateParts[2]);
-                                    value = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                                }
-                            } catch (e) {
-                                console.warn('Error parsing date:', value);
-                            }
-                        }
-                        
-                        entry[fieldName] = value;
-                    }
-                });
-                
-                return entry;
-            });
-        }
-
-        function processProductionCodes() {
-            // Extract batch prefixes from production codes
-            inventoryData.forEach(item => {
-                // Extract batch prefix (first 2-4 characters)
-                const batchPrefix = item.kode ? item.kode.substring(0, 2) : 'UN';
-                item.batchPrefix = batchPrefix;
-                
-                // Try to extract production date from code if it follows a pattern
-                // Assuming format: XX[YYMMDD]## where XX is product code, YYMMDD is date, ## is sequence
-                if (item.kode) {
-                    const dateMatch = item.kode.match(/[A-Z]{2}(\d{2})(\d{2})(\d{2})/);
-                    if (dateMatch) {
-                        const year = '20' + dateMatch[1]; // Assuming 20XX year format
-                        const month = dateMatch[2];
-                        const day = dateMatch[3];
-                        item.productionDate = `${year}-${month}-${day}`;
-                    } else {
-                        item.productionDate = null;
-                    }
-                } else {
-                    item.productionDate = null;
-                }
-            });
-            
-            // Group by batch prefix for analysis
-            batchAnalysis = {};
-            inventoryData.forEach(item => {
-                const prefix = item.batchPrefix;
-                if (!batchAnalysis[prefix]) {
-                    batchAnalysis[prefix] = {
-                        prefix: prefix,
-                        count: 0,
-                        totalQty: 0,
-                        totalKg: 0,
-                        items: [],
-                        firstEntry: null
-                    };
-                }
-                
-                batchAnalysis[prefix].count++;
-                batchAnalysis[prefix].totalQty += item.qty || 0;
-                batchAnalysis[prefix].totalKg += item.kg || 0;
-                batchAnalysis[prefix].items.push(item);
-                
-                // Track first entry date
-                if (item.tanggal) {
-                    const entryDate = new Date(item.tanggal);
-                    if (!batchAnalysis[prefix].firstEntry || entryDate < new Date(batchAnalysis[prefix].firstEntry)) {
-                        batchAnalysis[prefix].firstEntry = item.tanggal;
-                    }
-                }
-            });
-        }
-
-        function handleSearch() {
-            const searchTerm = searchInput.value.toLowerCase();
-            
-            filteredData = inventoryData.filter(item => {
-                return Object.values(item).some(value => 
-                    value !== null && value !== undefined && String(value).toLowerCase().includes(searchTerm)
-                );
-            });
-            
-            // Apply any active filters
-            applyFilters();
-            
-            // Re-render the table
-            renderTable();
-        }
-
-        function handleSort(column) {
-            // Toggle sort direction or set initial sort
-            if (currentSort.column === column) {
-                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-            } else {
-                currentSort.column = column;
-                currentSort.direction = 'asc';
-            }
-            
-            // Sort the data
-            filteredData.sort((a, b) => {
-                let valueA = a[column];
-                let valueB = b[column];
-                
-                // Handle null/undefined values
-                if (valueA === null || valueA === undefined) valueA = '';
-                if (valueB === null || valueB === undefined) valueB = '';
-                
-                // Handle date sorting
-                if (column === 'tanggal') {
-                    valueA = new Date(valueA || 0);
-                    valueB = new Date(valueB || 0);
-                }
-                
-                // Handle numeric sorting
-                if (column === 'qty' || column === 'kg') {
-                    valueA = Number(valueA || 0);
-                    valueB = Number(valueB || 0);
-                }
-                
-                if (valueA < valueB) {
-                    return currentSort.direction === 'asc' ? -1 : 1;
-                }
-                if (valueA > valueB) {
-                    return currentSort.direction === 'asc' ? 1 : -1;
-                }
-                return 0;
-            });
-            
-            // Update sort icons
-            updateSortIcons(column);
-            
-            // Re-render the table
-            renderTable();
-        }
-
-        function updateSortIcons(activeColumn) {
-            const headers = inventoryTable.querySelectorAll('th');
-            
-            headers.forEach(header => {
-                const column = header.getAttribute('data-sort');
-                const iconSpan = header.querySelector('.sort-icon');
-                
-                if (column === activeColumn) {
-                    iconSpan.textContent = currentSort.direction === 'asc' ? '↑' : '↓';
-                    iconSpan.classList.add('text-blue-300');
-                } else {
-                    iconSpan.textContent = '↕';
-                    iconSpan.classList.remove('text-blue-300');
-                }
-            });
-        }
-
-        function populateFilters() {
-            // Extract unique values for each filter category
-            const batches = [...new Set(inventoryData.filter(item => item.batchPrefix).map(item => item.batchPrefix))];
-            const sizes = [...new Set(inventoryData.filter(item => item.size).map(item => item.size))];
-            const packingStyles = [...new Set(inventoryData.filter(item => item.packing).map(item => item.packing))];
-            const locations = [...new Set(inventoryData.filter(item => item.lokasi).map(item => item.lokasi))];
-            const brands = [...new Set(inventoryData.filter(item => item.brand).map(item => item.brand))];
-            
-            // Populate batch filters
-            batchFilters.innerHTML = batches.map(batch => `
-                <div class="flex items-center">
-                    <input type="checkbox" id="batch-${batch}" class="batch-filter mr-2" value="${batch}">
-                    <label for="batch-${batch}" class="text-sm">${batch} (${getBatchCount(batch)})</label>
-                </div>
-            `).join('');
-            
-            // Populate size filters
-            sizeFilters.innerHTML = sizes.map(size => `
-                <div class="flex items-center">
-                    <input type="checkbox" id="size-${size.replace(/\s+/g, '_')}" class="size-filter mr-2" value="${size}">
-                    <label for="size-${size.replace(/\s+/g, '_')}" class="text-sm">${size}</label>
-                </div>
-            `).join('');
-            
-            // Populate packing style filters
-            packingFilters.innerHTML = packingStyles.map(style => `
-                <div class="flex items-center">
-                    <input type="checkbox" id="packing-${style.replace(/\s+/g, '_')}" class="packing-filter mr-2" value="${style}">
-                    <label for="packing-${style.replace(/\s+/g, '_')}" class="text-sm">${style}</label>
-                </div>
-            `).join('');
-            
-            // Populate location filters
-            locationFilters.innerHTML = locations.map(location => `
-                <div class="flex items-center">
-                    <input type="checkbox" id="location-${location.replace(/\s+/g, '_')}" class="location-filter mr-2" value="${location}">
-                    <label for="location-${location.replace(/\s+/g, '_')}" class="text-sm">${location}</label>
-                </div>
-            `).join('');
-            
-            // Populate brand filters
-            brandFilters.innerHTML = brands.map(brand => `
-                <div class="flex items-center">
-                    <input type="checkbox" id="brand-${brand.replace(/\s+/g, '_')}" class="brand-filter mr-2" value="${brand}">
-                    <label for="brand-${brand.replace(/\s+/g, '_')}" class="text-sm">${brand}</label>
-                </div>
-            `).join('');
-            
-            // Add event listeners to filter checkboxes
-            document.querySelectorAll('.batch-filter').forEach(checkbox => {
-                checkbox.addEventListener('change', () => {
-                    updateActiveFilters('batch', checkbox.value, checkbox.checked);
-                });
-            });
-            
-            document.querySelectorAll('.size-filter').forEach(checkbox => {
-                checkbox.addEventListener('change', () => {
-                    updateActiveFilters('size', checkbox.value, checkbox.checked);
-                });
-            });
-            
-            document.querySelectorAll('.packing-filter').forEach(checkbox => {
-                checkbox.addEventListener('change', () => {
-                    updateActiveFilters('packing', checkbox.value, checkbox.checked);
-                });
-            });
-            
-            document.querySelectorAll('.location-filter').forEach(checkbox => {
-                checkbox.addEventListener('change', () => {
-                    updateActiveFilters('lokasi', checkbox.value, checkbox.checked);
-                });
-            });
-            
-            document.querySelectorAll('.brand-filter').forEach(checkbox => {
-                checkbox.addEventListener('change', () => {
-                    updateActiveFilters('brand', checkbox.value, checkbox.checked);
-                });
-            });
-        }
-
-        function getBatchCount(batchPrefix) {
-            return batchAnalysis[batchPrefix] ? batchAnalysis[batchPrefix].count : 0;
-        }
-
-        function updateActiveFilters(category, value, isChecked) {
-            if (isChecked) {
-                activeFilters[category].push(value);
-            } else {
-                activeFilters[category] = activeFilters[category].filter(item => item !== value);
-            }
-            
-            applyFilters();
-        }
-
-        function applyFilters() {
-            // Start with the search results
-            const searchTerm = searchInput.value.toLowerCase();
-            
-            filteredData = inventoryData.filter(item => {
-                // Apply search filter
-                const matchesSearch = searchTerm === '' || Object.values(item).some(value => 
-                    value !== null && value !== undefined && String(value).toLowerCase().includes(searchTerm)
-                );
-                
-                // Apply category filters
-                const matchesBatch = activeFilters.batch.length === 0 || activeFilters.batch.includes(item.batchPrefix);
-                const matchesSize = activeFilters.size.length === 0 || activeFilters.size.includes(item.size);
-                const matchesPacking = activeFilters.packing.length === 0 || activeFilters.packing.includes(item.packing);
-                const matchesLocation = activeFilters.lokasi.length === 0 || activeFilters.lokasi.includes(item.lokasi);
-                const matchesBrand = activeFilters.brand.length === 0 || activeFilters.brand.includes(item.brand);
-                
-                return matchesSearch && matchesBatch && matchesSize && matchesPacking && matchesLocation && matchesBrand;
-            });
-            
-            // Re-apply current sort if any
-            if (currentSort.column) {
-                handleSort(currentSort.column);
-            } else {
-                renderTable();
-            }
-        }
-
-        function clearAllFilters() {
-            // Clear all checkboxes
-            document.querySelectorAll('.batch-filter, .size-filter, .packing-filter, .location-filter, .brand-filter').forEach(checkbox => {
-                checkbox.checked = false;
-            });
-            
-            // Reset active filters
-            activeFilters = {
-                batch: [],
-                size: [],
-                packing: [],
-                lokasi: [],
-                brand: []
-            };
-            
-            // Clear search
-            searchInput.value = '';
-            
-            // Reset filtered data
-            filteredData = [...inventoryData];
-            
-            // Re-render table
-            renderTable();
-        }
-
-        function renderTable() {
-            const tbody = inventoryTable.querySelector('tbody');
-            tbody.innerHTML = '';
-            
-            if (filteredData.length === 0) {
-                const noDataRow = document.createElement('tr');
-                noDataRow.innerHTML = `
-                    <td colspan="9" class="text-center py-8 text-gray-500">
-                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <p class="mt-2">No matching inventory items found</p>
-                    </td>
-                `;
-                tbody.appendChild(noDataRow);
-            } else {
-                // Group by batch for better visualization
-                const groupedByBatch = {};
-                filteredData.forEach(item => {
-                    const batchKey = item.batchPrefix || 'Unknown';
-                    if (!groupedByBatch[batchKey]) {
-                        groupedByBatch[batchKey] = [];
-                    }
-                    groupedByBatch[batchKey].push(item);
-                });
-                
-                // Render each batch group
-                Object.keys(groupedByBatch).forEach(batchKey => {
-                    const batchItems = groupedByBatch[batchKey];
-                    
-                    // Add a batch header row
-                    const batchHeaderRow = document.createElement('tr');
-                    batchHeaderRow.classList.add('bg-blue-50', 'font-medium');
-                    batchHeaderRow.innerHTML = `
-                        <td colspan="9" class="py-2 px-4">
-                            <div class="flex items-center">
-                                <span class="badge badge-blue mr-2">${batchKey}</span>
-                                <span>Production Batch (${batchItems.length} items)</span>
-                            </div>
-                        </td>
-                    `;
-                    tbody.appendChild(batchHeaderRow);
-                    
-                    // Add individual items
-                    batchItems.forEach(item => {
-                        const row = document.createElement('tr');
-                        
-                        // Format date for display
-                        let formattedDate = 'N/A';
-                        if (item.tanggal) {
-                            try {
-                                formattedDate = new Date(item.tanggal).toLocaleDateString('id-ID', {
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric'
-                                });
-                            } catch (e) {
-                                formattedDate = item.tanggal;
-                            }
-                        }
-                        
-                        // Create tooltip for production code info
-                        let productionInfo = '';
-                        if (item.productionDate) {
-                            productionInfo = `
-                                <div class="tooltip">
-                                    <i class="fas fa-info-circle text-blue-500 ml-1"></i>
-                                    <span class="tooltiptext">Production Date: ${item.productionDate}</span>
-                                </div>
-                            `;
-                        }
-                        
-                        row.innerHTML = `
-                            <td>
-                                ${item.kode || 'N/A'}
-                                ${productionInfo}
-                            </td>
-                            <td>${item.nama || 'N/A'}</td>
-                            <td><span class="badge badge-blue">${item.size || 'N/A'}</span></td>
-                            <td>${item.packing || 'N/A'}</td>
-                            <td><span class="badge badge-orange">${item.brand || 'N/A'}</span></td>
-                            <td>${formattedDate}</td>
-                            <td class="text-right">${(item.qty || 0).toLocaleString()}</td>
-                            <td class="text-right">${(item.kg || 0).toLocaleString()} kg</td>
-                            <td><span class="badge badge-green">${item.lokasi || 'N/A'}</span></td>
-                        `;
-                        
-                        tbody.appendChild(row);
-                    });
-                });
-            }
-            
-            // Update result count
-            resultCount.textContent = `Showing ${filteredData.length} of ${inventoryData.length} items`;
-            
-            // Update stats based on filtered data
-            updateStats();
-        }
-
-        function updateStats() {
-            // Calculate statistics from filtered data
-            const uniqueProducts = new Set(filteredData.filter(item => item.kode).map(item => item.kode)).size;
-            const totalQty = filteredData.reduce((sum, item) => sum + (item.qty || 0), 0);
-            const totalKg = filteredData.reduce((sum, item) => sum + (item.kg || 0), 0);
-            const uniqueBatchCount = new Set(filteredData.filter(item => item.batchPrefix).map(item => item.batchPrefix)).size;
-            const uniqueBrandCount = new Set(filteredData.filter(item => item.brand).map(item => item.brand)).size;
-            
-            // Update the stats display
-            totalProducts.textContent = uniqueProducts;
-            totalQuantity.textContent = totalQty.toLocaleString();
-            totalWeight.textContent = totalKg.toLocaleString() + ' kg';
-            uniqueBatches.textContent = uniqueBatchCount;
-            uniqueBrands.textContent = uniqueBrandCount;
-        }
-
-        function updateLastUpdated() {
-            // Use the timestamp from M1 cell or fallback to current time
-            lastUpdated.textContent = `Last updated: ${lastUpdatedTimestamp || new Date().toLocaleString()}`;
-        }
-
-        function exportToPdf() {
-            // Create a new jsPDF instance
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            // Add title
-            doc.setFontSize(18);
-            doc.text('ShrimpStock Inventory Report', 14, 22);
-            
-            // Add timestamp
-            doc.setFontSize(10);
-            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 30);
-            doc.text(`Last Data Update: ${lastUpdatedTimestamp || 'Unknown'}`, 14, 36);
-            
-            // Create the table
-            const tableColumn = ["Kode Produksi", "Nama", "Size", "Packing", "Brand", "Tanggal", "Qty", "Kg", "Lokasi"];
-            const tableRows = [];
-            
-            // Add data rows
-            filteredData.forEach(item => {
-                let formattedDate = 'N/A';
-                if (item.tanggal) {
-                    try {
-                        formattedDate = new Date(item.tanggal).toLocaleDateString();
-                    } catch (e) {
-                        formattedDate = item.tanggal;
-                    }
-                }
-                
-                const rowData = [
-                    item.kode || 'N/A',
-                    item.nama || 'N/A',
-                    item.size || 'N/A',
-                    item.packing || 'N/A',
-                    item.brand || 'N/A',
-                    formattedDate,
-                    (item.qty || 0).toString(),
-                    (item.kg || 0).toString(),
-                    item.lokasi || 'N/A'
-                ];
-                tableRows.push(rowData);
-            });
-            
-            // Generate the PDF table
-            doc.autoTable({
-                head: [tableColumn],
-                body: tableRows,
-                startY: 42,
-                styles: { fontSize: 8 },
-                headStyles: { fillColor: [15, 94, 156] },
-                didDrawPage: function(data) {
-                    // Add page number
-                    doc.setFontSize(8);
-                    doc.text(`Page ${doc.internal.getNumberOfPages()}`, data.settings.margin.left, doc.internal.pageSize.height - 10);
-                }
-            });
-            
-            // Add summary statistics
-            const finalY = doc.lastAutoTable.finalY + 10;
-            doc.setFontSize(12);
-            doc.text('Summary Statistics', 14, finalY);
-            
-            doc.setFontSize(10);
-            doc.text(`Total Products: ${totalProducts.textContent}`, 14, finalY + 7);
-            doc.text(`Total Quantity: ${totalQuantity.textContent}`, 14, finalY + 14);
-            doc.text(`Total Weight: ${totalWeight.textContent}`, 14, finalY + 21);
-            doc.text(`Unique Batches: ${uniqueBatches.textContent}`, 14, finalY + 28);
-            doc.text(`Unique Brands: ${uniqueBrands.textContent}`, 14, finalY + 35);
-            
-            // Save the PDF
-            doc.save('ShrimpStock-Inventory.pdf');
-        }
-
-        function switchTab(tabName) {
-            // Remove active class from all tabs
-            tabInventory.classList.remove('active');
-            tabBatch.classList.remove('active');
-            tabStats.classList.remove('active');
-            inventoryContent.classList.remove('active');
-            batchContent.classList.remove('active');
-            statsContent.classList.remove('active');
-            
-            // Add active class to selected tab
-            if (tabName === 'inventory') {
-                tabInventory.classList.add('active');
-                inventoryContent.classList.add('active');
-            } else if (tabName === 'batch') {
-                tabBatch.classList.add('active');
-                batchContent.classList.add('active');
-                renderBatchAnalysis();
-            } else if (tabName === 'stats') {
-                tabStats.classList.add('active');
-                statsContent.classList.add('active');
-                renderStatistics();
-            }
-        }
-
-        function renderBatchAnalysis() {
-            const batchTableBody = document.getElementById('batchTableBody');
-            batchTableBody.innerHTML = '';
-            
-            // Sort batches by total quantity
-            const sortedBatches = Object.values(batchAnalysis).sort((a, b) => b.totalQty - a.totalQty);
-            
-            sortedBatches.forEach(batch => {
-                const row = document.createElement('tr');
-                
-                let formattedDate = 'N/A';
-                if (batch.firstEntry) {
-                    try {
-                        formattedDate = new Date(batch.firstEntry).toLocaleDateString('id-ID', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                        });
-                    } catch (e) {
-                        formattedDate = batch.firstEntry;
-                    }
-                }
-                
-                row.innerHTML = `
-                    <td class="px-4 py-2">
-                        <span class="badge badge-blue">${batch.prefix}</span>
-                    </td>
-                    <td class="px-4 py-2">${batch.count}</td>
-                    <td class="px-4 py-2">${batch.totalQty.toLocaleString()}</td>
-                    <td class="px-4 py-2">${batch.totalKg.toLocaleString()} kg</td>
-                    <td class="px-4 py-2">${formattedDate}</td>
-                    <td class="px-4 py-2">
-                        <button class="bg-blue-100 hover:bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs view-batch-details" data-batch="${batch.prefix}">
-                            View Details
-                        </button>
-                    </td>
-                `;
-                
-                batchTableBody.appendChild(row);
-            });
-            
-            // Add event listeners to view details buttons
-            document.querySelectorAll('.view-batch-details').forEach(button => {
-                button.addEventListener('click', () => {
-                    const batchPrefix = button.getAttribute('data-batch');
-                    viewBatchDetails(batchPrefix);
-                });
-            });
-            
-            // Render batch charts
-            renderBatchCharts();
-        }
-
-        function viewBatchDetails(batchPrefix) {
-            // Filter data to show only the selected batch
-            activeFilters.batch = [batchPrefix];
-            
-            // Update checkboxes to reflect the filter
-            document.querySelectorAll('.batch-filter').forEach(checkbox => {
-                checkbox.checked = checkbox.value === batchPrefix;
-            });
-            
-            // Switch to inventory tab to show the filtered data
-            switchTab('inventory');
-            
-            // Apply the filter
-            applyFilters();
-        }
-
-        function renderBatchCharts() {
-            document.getElementById('batchChart').innerHTML = createSimpleBarChart(batchAnalysis);
-            document.getElementById('timelineChart').innerHTML = createSimpleTimelineChart(batchAnalysis);
-        }
-
-        function renderStatistics() {
-            document.getElementById('shrimpTypeChart').innerHTML = createSimplePieChart('shrimpType');
-            document.getElementById('sizeChart').innerHTML = createSimplePieChart('size');
-            document.getElementById('locationChart').innerHTML = createSimplePieChart('location');
-            document.getElementById('packingChart').innerHTML = createSimplePieChart('packing');
-            document.getElementById('brandChart').innerHTML = createSimplePieChart('brand');
-        }
-
-        function createSimpleBarChart(data) {
-            // Create a simple SVG bar chart for batch data
-            const batches = Object.values(data).sort((a, b) => b.totalQty - a.totalQty).slice(0, 5);
-            const maxValue = Math.max(...batches.map(b => b.totalQty));
-            
-            let svg = `
-                <svg width="100%" height="100%" viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
-                    <text x="200" y="20" text-anchor="middle" font-size="14" font-weight="bold">Top 5 Batches by Quantity</text>
-            `;
-            
-            // Draw bars
-            batches.forEach((batch, index) => {
-                const barHeight = 25;
-                const barWidth = (batch.totalQty / maxValue) * 300;
-                const y = 40 + (index * 35);
-                
-                svg += `
-                    <rect x="80" y="${y}" width="${barWidth}" height="${barHeight}" fill="#3b82f6" opacity="0.8" rx="4" />
-                    <text x="75" y="${y + barHeight/2 + 5}" text-anchor="end" font-size="12">${batch.prefix}</text>
-                    <text x="${barWidth + 85}" y="${y + barHeight/2 + 5}" font-size="12">${batch.totalQty}</text>
-                `;
-            });
-            
-            svg += '</svg>';
-            return svg;
-        }
-
-        function createSimpleTimelineChart(data) {
-            // Create a simple SVG timeline chart
-            const batches = Object.values(data).filter(b => b.firstEntry);
-            
-            if (batches.length === 0) {
-                return '<div class="flex items-center justify-center h-full text-gray-500">No timeline data available</div>';
-            }
-            
-            const dates = batches.map(b => new Date(b.firstEntry));
-            const minDate = new Date(Math.min(...dates));
-            const maxDate = new Date(Math.max(...dates));
-            const dateRange = maxDate - minDate;
-            
-            if (dateRange === 0) {
-                return '<div class="flex items-center justify-center h-full text-gray-500">Insufficient date range for timeline</div>';
-            }
-            
-            let svg = `
-                <svg width="100%" height="100%" viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
-                    <text x="200" y="20" text-anchor="middle" font-size="14" font-weight="bold">Production Timeline</text>
-                    <line x1="50" y1="150" x2="350" y2="150" stroke="#cbd5e1" stroke-width="2" />
-            `;
-            
-            // Draw timeline points
-            batches.forEach(batch => {
                 try {
-                    const date = new Date(batch.firstEntry);
-                    const x = 50 + ((date - minDate) / dateRange) * 300;
+                    const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}?key=${CONFIG.API_KEY}`;
+                    const response = await fetch(url);
                     
-                    svg += `
-                        <circle cx="${x}" cy="150" r="6" fill="#3b82f6" />
-                        <text x="${x}" y="170" text-anchor="middle" font-size="10">${batch.prefix}</text>
-                        <text x="${x}" y="130" text-anchor="middle" font-size="9">${date.toLocaleDateString('id-ID', {month: 'short', day: 'numeric'})}</text>
-                    `;
-                } catch (e) {
-                    console.warn('Error processing date for timeline:', batch.firstEntry);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    
+                    const data = await response.json();
+                    
+                    if (data.values && data.values.length > 1) {
+                        this.stockData = data.values.slice(1).map(row => {
+                            const processedRow = [];
+                            for (let i = 0; i < 8; i++) {
+                                processedRow[i] = row[i] || '-';
+                            }
+                            return processedRow;
+                        });
+                        
+                        this.filteredData = [...this.stockData];
+                        this.updateUI();
+                        UI.setConnectionStatus(true);
+                    } else {
+                        throw new Error('No data found');
+                    }
+                } catch (error) {
+                    console.error('Fetch error:', error);
+                    UI.showError(error.message);
+                    UI.setConnectionStatus(false);
+                    this.loadSampleData();
+                } finally {
+                    this.isLoading = false;
+                    UI.hideLoading();
                 }
-            });
-            
-            // Add axis labels
-            svg += `
-                <text x="50" y="190" text-anchor="middle" font-size="10">${minDate.toLocaleDateString('id-ID', {month: 'short', day: 'numeric', year: 'numeric'})}</text>
-                <text x="350" y="190" text-anchor="middle" font-size="10">${maxDate.toLocaleDateString('id-ID', {month: 'short', day: 'numeric', year: 'numeric'})}</text>
-            `;
-            
-            svg += '</svg>';
-            return svg;
-        }
+            },
 
-        function createSimplePieChart(type) {
-            // Create a simple SVG pie chart based on the type
-            let data = [];
-            let title = '';
-            
-            if (type === 'shrimpType') {
-                title = 'Shrimp Types';
-                const types = {};
-                inventoryData.forEach(item => {
-                    if (item.nama) {
-                        if (!types[item.nama]) types[item.nama] = 0;
-                        types[item.nama] += item.kg || 0;
-                    }
+            loadSampleData() {
+                this.stockData = [
+                    ['2024-01-15', 'Beras Premium', '25kg', 'Brand A', 'BP001', 'PO-2024-001', '20', '500'],
+                    ['2024-01-15', 'Gula Pasir', '1kg', 'Brand B', 'GP002', 'PO-2024-001', '100', '100'],
+                    ['2024-01-16', 'Minyak Goreng', '2L', 'Brand C', 'MG003', 'PO-2024-002', '50', '100'],
+                    ['2024-01-16', 'Tepung Terigu', '1kg', 'Brand A', 'TT004', 'PO-2024-002', '75', '75'],
+                    ['2024-01-17', 'Beras Premium', '25kg', 'Brand B', 'BP005', 'PO-2024-003', '15', '375'],
+                    ['2024-01-17', 'Gula Pasir', '1kg', 'Brand A', 'GP006', 'PO-2024-003', '80', '80'],
+                    ['2024-01-18', 'Minyak Goreng', '2L', 'Brand B', 'MG007', 'PO-2024-004', '30', '60'],
+                    ['2024-01-18', 'Tepung Terigu', '1kg', 'Brand C', 'TT008', 'PO-2024-004', '60', '60']
+                ];
+                this.filteredData = [...this.stockData];
+                this.updateUI();
+            },
+
+            updateUI() {
+                this.populateFilters();
+                this.populateTable();
+                this.updateStats();
+                this.updateSummaries();
+                Charts.updateCharts();
+            },
+
+            populateFilters() {
+                const products = [...new Set(this.stockData.map(row => row[1]).filter(item => item && item !== '-'))];
+                const brands = [...new Set(this.stockData.map(row => row[3]).filter(item => item && item !== '-'))];
+                
+                const productFilter = document.getElementById('productFilter');
+                const brandFilter = document.getElementById('brandFilter');
+                
+                productFilter.innerHTML = '<option value="">Semua Produk</option>' + 
+                    products.map(p => `<option value="${p}">${p}</option>`).join('');
+                
+                brandFilter.innerHTML = '<option value="">Semua Brand</option>' + 
+                    brands.map(b => `<option value="${b}">${b}</option>`).join('');
+            },
+
+            populateTable() {
+                const tbody = document.getElementById('stockTableBody');
+                const start = (this.currentPage - 1) * CONFIG.ITEMS_PER_PAGE;
+                const end = Math.min(start + CONFIG.ITEMS_PER_PAGE, this.filteredData.length);
+                
+                tbody.innerHTML = this.filteredData.slice(start, end).map(row => `
+                    <tr class="table-row">
+                        <td class="px-4 py-3 text-sm text-gray-900">${row[0]}</td>
+                        <td class="px-4 py-3 text-sm font-medium text-gray-900">${row[1]}</td>
+                        <td class="px-4 py-3 text-sm text-gray-900">${row[2]}</td>
+                        <td class="px-4 py-3 text-sm">
+                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">${row[3]}</span>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-900 font-mono">${row[4]}</td>
+                        <td class="px-4 py-3 text-sm text-gray-900 font-mono">${row[5]}</td>
+                        <td class="px-4 py-3 text-sm text-gray-900 text-right">${row[6]}</td>
+                        <td class="px-4 py-3 text-sm text-gray-900 text-right font-medium">${row[7]} kg</td>
+                    </tr>
+                `).join('');
+                
+                this.updatePagination();
+            },
+
+            updatePagination() {
+                const total = this.filteredData.length;
+                const start = (this.currentPage - 1) * CONFIG.ITEMS_PER_PAGE + 1;
+                const end = Math.min(this.currentPage * CONFIG.ITEMS_PER_PAGE, total);
+                const maxPages = Math.ceil(total / CONFIG.ITEMS_PER_PAGE);
+                
+                document.getElementById('showingStart').textContent = total > 0 ? start : 0;
+                document.getElementById('showingEnd').textContent = end;
+                document.getElementById('totalRecords').textContent = total;
+                document.getElementById('pageInfo').textContent = `${this.currentPage} / ${maxPages}`;
+                
+                document.getElementById('prevBtn').disabled = this.currentPage <= 1;
+                document.getElementById('nextBtn').disabled = this.currentPage >= maxPages;
+            },
+
+            updateStats() {
+                const totalItems = this.filteredData.length;
+                const totalKg = this.filteredData.reduce((sum, row) => sum + (parseInt(row[7]) || 0), 0);
+                const uniqueProducts = new Set(this.filteredData.map(row => row[1])).size;
+                const uniqueBrands = new Set(this.filteredData.map(row => row[3])).size;
+                
+                document.getElementById('totalItems').textContent = totalItems.toLocaleString();
+                document.getElementById('totalKg').textContent = totalKg.toLocaleString();
+                document.getElementById('uniqueProducts').textContent = uniqueProducts;
+                document.getElementById('uniqueBrands').textContent = uniqueBrands;
+                
+                // Update today's stats
+                const today = new Date().toISOString().split('T')[0];
+                const todayData = this.filteredData.filter(row => row[0] === today);
+                const todayKg = todayData.reduce((sum, row) => sum + (parseInt(row[7]) || 0), 0);
+                
+                document.getElementById('todayItems').textContent = todayData.length;
+                document.getElementById('todayKg').textContent = todayKg.toLocaleString();
+                document.getElementById('todayProducts').textContent = new Set(todayData.map(row => row[1])).size;
+                document.getElementById('todayBrands').textContent = new Set(todayData.map(row => row[3])).size;
+            },
+
+            updateSummaries() {
+                // PO Summary
+                const poSummary = {};
+                this.filteredData.forEach(row => {
+                    const po = row[5];
+                    if (!poSummary[po]) poSummary[po] = { items: 0, kg: 0 };
+                    poSummary[po].items++;
+                    poSummary[po].kg += parseInt(row[7]) || 0;
                 });
-                data = Object.entries(types).map(([name, value]) => ({ name, value }));
-            } else if (type === 'size') {
-                title = 'Size Distribution';
-                const sizes = {};
-                inventoryData.forEach(item => {
-                    if (item.size) {
-                        if (!sizes[item.size]) sizes[item.size] = 0;
-                        sizes[item.size] += item.kg || 0;
-                    }
+                
+                document.getElementById('poSummary').innerHTML = Object.entries(poSummary)
+                    .slice(0, 6)
+                    .map(([po, data]) => `
+                        <div class="bg-white p-6 rounded-lg shadow">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">${po}</h3>
+                            <div class="space-y-2">
+                                <p class="text-sm text-gray-600">Total Item: <span class="font-medium">${data.items}</span></p>
+                                <p class="text-sm text-gray-600">Total Kg: <span class="font-medium">${data.kg.toLocaleString()} kg</span></p>
+                                <p class="text-sm text-gray-600">Status: <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Aktif</span></p>
+                            </div>
+                        </div>
+                    `).join('');
+                
+                // Brand Summary
+                const brandSummary = {};
+                this.filteredData.forEach(row => {
+                    const brand = row[3];
+                    const product = row[1];
+                    if (!brandSummary[brand]) brandSummary[brand] = {};
+                    if (!brandSummary[brand][product]) brandSummary[brand][product] = 0;
+                    brandSummary[brand][product] += parseInt(row[7]) || 0;
                 });
-                data = Object.entries(sizes).map(([name, value]) => ({ name, value }));
-            } else if (type === 'location') {
-                title = 'Storage Locations';
-                const locations = {};
-                inventoryData.forEach(item => {
-                    if (item.lokasi) {
-                        if (!locations[item.lokasi]) locations[item.lokasi] = 0;
-                        locations[item.lokasi] += item.kg || 0;
-                    }
+                
+                document.getElementById('brandSummary').innerHTML = Object.entries(brandSummary)
+                    .slice(0, 4)
+                    .map(([brand, products]) => {
+                        const total = Object.values(products).reduce((sum, kg) => sum + kg, 0);
+                        return `
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4">${brand}</h3>
+                                <div class="space-y-3">
+                                    ${Object.entries(products).slice(0, 3).map(([product, kg]) => `
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">${product}</span>
+                                            <span class="font-medium">${kg.toLocaleString()} kg</span>
+                                        </div>
+                                    `).join('')}
+                                    <div class="border-t pt-2">
+                                        <div class="flex justify-between font-semibold">
+                                            <span>Total</span>
+                                            <span>${total.toLocaleString()} kg</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+            },
+
+            applyFilters() {
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                const product = document.getElementById('productFilter').value;
+                const brand = document.getElementById('brandFilter').value;
+                
+                this.filteredData = this.stockData.filter(row => {
+                    return (!startDate || row[0] >= startDate) &&
+                           (!endDate || row[0] <= endDate) &&
+                           (!product || row[1] === product) &&
+                           (!brand || row[3] === brand);
                 });
-                data = Object.entries(locations).map(([name, value]) => ({ name, value }));
-            } else if (type === 'packing') {
-                title = 'Packing Styles';
-                const packing = {};
-                inventoryData.forEach(item => {
-                    if (item.packing) {
-                        if (!packing[item.packing]) packing[item.packing] = 0;
-                        packing[item.packing] += item.kg || 0;
+                
+                this.currentPage = 1;
+                this.updateUI();
+            },
+
+            resetFilters() {
+                document.getElementById('startDate').value = '';
+                document.getElementById('endDate').value = '';
+                document.getElementById('productFilter').value = '';
+                document.getElementById('brandFilter').value = '';
+                
+                this.filteredData = [...this.stockData];
+                this.currentPage = 1;
+                this.updateUI();
+            },
+
+            sortTable(columnIndex) {
+                if (this.sortColumn === columnIndex) {
+                    this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    this.sortColumn = columnIndex;
+                    this.sortDirection = 'asc';
+                }
+                
+                this.filteredData.sort((a, b) => {
+                    let aVal = a[columnIndex];
+                    let bVal = b[columnIndex];
+                    
+                    // Handle numeric columns
+                    if (columnIndex === 6 || columnIndex === 7) {
+                        aVal = parseInt(aVal) || 0;
+                        bVal = parseInt(bVal) || 0;
                     }
+                    
+                    if (aVal < bVal) return this.sortDirection === 'asc' ? -1 : 1;
+                    if (aVal > bVal) return this.sortDirection === 'asc' ? 1 : -1;
+                    return 0;
                 });
-                data = Object.entries(packing).map(([name, value]) => ({ name, value }));
-            } else if (type === 'brand') {
-                title = 'Brand Distribution';
-                const brands = {};
-                inventoryData.forEach(item => {
-                    if (item.brand) {
-                        if (!brands[item.brand]) brands[item.brand] = 0;
-                        brands[item.brand] += item.kg || 0;
-                    }
-                });
-                data = Object.entries(brands).map(([name, value]) => ({ name, value }));
+                
+                this.populateTable();
+            },
+
+            previousPage() {
+                if (this.currentPage > 1) {
+                    this.currentPage--;
+                    this.populateTable();
+                }
+            },
+
+            nextPage() {
+                const maxPages = Math.ceil(this.filteredData.length / CONFIG.ITEMS_PER_PAGE);
+                if (this.currentPage < maxPages) {
+                    this.currentPage++;
+                    this.populateTable();
+                }
+            },
+
+            refreshData() {
+                this.fetchData();
             }
-            
-            // Sort data by value
-            data.sort((a, b) => b.value - a.value);
-            
-            // Limit to top 8 for readability
-            data = data.slice(0, 8);
-            
-            // Calculate total for percentages
-            const total = data.reduce((sum, item) => sum + item.value, 0);
-            
-            if (data.length === 0 || total === 0) {
-                return '<div class="flex items-center justify-center h-full text-gray-500">No data available</div>';
-            }
-            
-            // Generate SVG pie chart
-            let svg = `
-                <svg width="100%" height="100%" viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
-                    <text x="200" y="20" text-anchor="middle" font-size="14" font-weight="bold">${title}</text>
-            `;
-            
-            // Colors for pie slices
-            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6'];
-            
-            // Draw pie chart
-            let startAngle = 0;
-            const centerX = 100;
-            const centerY = 100;
-            const radius = 60;
-            
-            data.forEach((item, index) => {
-                const percentage = item.value / total;
-                const endAngle = startAngle + (percentage * 2 * Math.PI);
-                
-                // Calculate arc path
-                const x1 = centerX + radius * Math.cos(startAngle);
-                const y1 = centerY + radius * Math.sin(startAngle);
-                const x2 = centerX + radius * Math.cos(endAngle);
-                const y2 = centerY + radius * Math.sin(endAngle);
-                
-                // Create arc path
-                const largeArcFlag = percentage > 0.5 ? 1 : 0;
-                const pathData = [
-                    `M ${centerX} ${centerY}`,
-                    `L ${x1} ${y1}`,
-                    `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
-                    'Z'
-                ].join(' ');
-                
-                svg += `<path d="${pathData}" fill="${colors[index % colors.length]}" />`;
-                
-                // Update start angle for next slice
-                startAngle = endAngle;
-            });
-            
-            // Add legend
-            data.forEach((item, index) => {
-                const y = 70 + (index * 20);
-                const percentage = ((item.value / total) * 100).toFixed(1);
-                
-                svg += `
-                    <rect x="200" y="${y - 10}" width="10" height="10" fill="${colors[index % colors.length]}" />
-                    <text x="215" y="${y}" font-size="12">${item.name} (${percentage}%)</text>
+        };
+
+        // UI Management
+        const UI = {
+            showLoading() {
+                document.getElementById('stockTableBody').innerHTML = `
+                    <tr><td colspan="8" class="px-6 py-12 text-center">
+                        <div class="flex flex-col items-center">
+                            <div class="loading-spinner w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mb-4"></div>
+                            <p class="text-gray-600">Memuat data...</p>
+                        </div>
+                    </td></tr>
                 `;
-            });
+            },
+
+            hideLoading() {
+                // Loading will be replaced by actual data
+            },
+
+            showError(message) {
+                document.getElementById('stockTableBody').innerHTML = `
+                    <tr><td colspan="8" class="px-6 py-12 text-center">
+                        <div class="flex flex-col items-center">
+                            <i class="fas fa-exclamation-triangle text-yellow-500 text-3xl mb-4"></i>
+                            <p class="text-gray-600 mb-2">Gagal memuat data</p>
+                            <p class="text-sm text-gray-500 mb-4">${message}</p>
+                            <button onclick="DataManager.refreshData()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                                <i class="fas fa-refresh mr-2"></i>Coba Lagi
+                            </button>
+                        </div>
+                    </td></tr>
+                `;
+            },
+
+            setConnectionStatus(connected) {
+                const status = document.getElementById('connectionStatus');
+                const statusText = status.nextElementSibling;
+                
+                if (connected) {
+                    status.className = 'w-2 h-2 bg-green-500 rounded-full mr-2';
+                    statusText.textContent = 'Terhubung';
+                } else {
+                    status.className = 'w-2 h-2 bg-red-500 rounded-full mr-2';
+                    statusText.textContent = 'Terputus';
+                }
+            },
+
+            toggleSidebar() {
+                const sidebar = document.querySelector('.sidebar');
+                const overlay = document.querySelector('.mobile-overlay');
+                
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('show');
+            },
+
+            closeSidebar() {
+                const sidebar = document.querySelector('.sidebar');
+                const overlay = document.querySelector('.mobile-overlay');
+                
+                sidebar.classList.remove('open');
+                overlay.classList.remove('show');
+            },
+
+            showSection(sectionName) {
+                // Hide all sections
+                document.querySelectorAll('.section').forEach(section => {
+                    section.classList.add('hidden');
+                });
+                
+                // Show selected section
+                document.getElementById(sectionName + '-section').classList.remove('hidden');
+                
+                // Update sidebar
+                document.querySelectorAll('.sidebar-item').forEach(item => {
+                    item.classList.remove('bg-gradient-to-r', 'from-blue-500', 'to-purple-600', 'text-white');
+                    item.classList.add('text-gray-700');
+                });
+                
+                event.target.closest('.sidebar-item').classList.add('bg-gradient-to-r', 'from-blue-500', 'to-purple-600', 'text-white');
+                event.target.closest('.sidebar-item').classList.remove('text-gray-700');
+                
+                // Close mobile sidebar
+                if (window.innerWidth <= 768) {
+                    this.closeSidebar();
+                }
+            }
+        };
+
+        // Charts Management
+        const Charts = {
+            brandChart: null,
+            trendChart: null,
+
+            init() {
+                this.initBrandChart();
+                this.initTrendChart();
+            },
+
+            initBrandChart() {
+                const ctx = document.getElementById('brandChart').getContext('2d');
+                this.brandChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            data: [],
+                            backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+            },
+
+            initTrendChart() {
+                const ctx = document.getElementById('trendChart').getContext('2d');
+                this.trendChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
+                        datasets: [{
+                            label: 'Stok (kg)',
+                            data: [1200, 1350, 1100, 1400, 1250, 1500, 1300],
+                            borderColor: '#3B82F6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            },
+
+            updateCharts() {
+                if (!this.brandChart || !DataManager.filteredData.length) return;
+                
+                // Update brand chart with real data
+                const brandData = {};
+                DataManager.filteredData.forEach(row => {
+                    const brand = row[3];
+                    const kg = parseInt(row[7]) || 0;
+                    brandData[brand] = (brandData[brand] || 0) + kg;
+                });
+                
+                const brands = Object.keys(brandData).slice(0, 5);
+                const values = brands.map(brand => brandData[brand]);
+                
+                this.brandChart.data.labels = brands;
+                this.brandChart.data.datasets[0].data = values;
+                this.brandChart.update();
+            }
+        };
+
+        // Utilities
+        const Utils = {
+            exportToPDF() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Title
+                doc.setFontSize(16);
+                doc.setFont(undefined, 'bold');
+                doc.text('Dashboard Stok Produk', 14, 20);
+                
+                // Date
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
+                doc.text(`Diekspor: ${new Date().toLocaleDateString('id-ID')}`, 14, 30);
+                
+                // Table
+                const headers = ['Tanggal', 'Produk', 'Packing', 'Brand', 'Kode', 'PO', 'mc', 'Kg'];
+                const tableData = DataManager.filteredData.map(row => [
+                    row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7]
+                ]);
+                
+                doc.autoTable({
+                    head: [headers],
+                    body: tableData,
+                    startY: 40,
+                    styles: { fontSize: 8, cellPadding: 2 },
+                    headStyles: { fillColor: [59, 130, 246], textColor: 255 },
+                    alternateRowStyles: { fillColor: [248, 250, 252] }
+                });
+                
+                // Summary
+                const finalY = doc.lastAutoTable.finalY + 10;
+                const totalKg = DataManager.filteredData.reduce((sum, row) => sum + (parseInt(row[7]) || 0), 0);
+                
+                doc.setFont(undefined, 'bold');
+                doc.text(`Total: ${DataManager.filteredData.length} item, ${totalKg.toLocaleString()} kg`, 14, finalY);
+                
+                doc.save('dashboard-stok-produk.pdf');
+            },
+
+            setCurrentDate() {
+                document.getElementById('currentDate').textContent = new Date().toLocaleDateString('id-ID');
+            }
+        };
+
+        // Initialize Application
+        document.addEventListener('DOMContentLoaded', () => {
+            Utils.setCurrentDate();
+            Charts.init();
+            DataManager.fetchData();
             
-            svg += '</svg>';
-            return svg;
-        }
-
-        function initializeCharts() {
-            // This prepares the data for charts
-            processProductionCodes();
-        }
-
-        function showLoading() {
-            loadingState.classList.remove('hidden');
-            errorState.classList.add('hidden');
-            dataContainer.classList.add('hidden');
-        }
-
-        function showError(message) {
-            loadingState.classList.add('hidden');
-            errorState.classList.remove('hidden');
-            dataContainer.classList.add('hidden');
-            
-            document.getElementById('errorMessage').textContent = message || 'Unable to load data. Please try again.';
-        }
-
-        function showData() {
-            loadingState.classList.add('hidden');
-            errorState.classList.add('hidden');
-            dataContainer.classList.remove('hidden');
-        }
+            // Auto refresh every 5 minutes
+            setInterval(() => DataManager.refreshData(), CONFIG.REFRESH_INTERVAL);
+        });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9664daac95735f5c',t:'MTc1MzcxMDcxNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'966d8983a1da4ac4',t:'MTc1MzgwMTc2NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
