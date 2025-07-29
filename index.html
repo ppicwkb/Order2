@@ -44,7 +44,7 @@
         <button onclick="UI.toggleSidebar()" class="text-gray-600 hover:text-gray-800">
             <i class="fas fa-bars text-xl"></i>
         </button>
-        <h1 class="text-lg font-bold text-gray-800">📊 Dashboard Stok</h1>
+        <h1 class="text-lg font-bold text-gray-800">📊 Dashboard CS WKB</h1>
         <div class="w-6"></div>
     </div>
 
@@ -55,7 +55,7 @@
     <div class="sidebar fixed left-0 top-0 h-full w-64 bg-white shadow-lg z-20">
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
-                <h1 class="text-xl font-bold text-gray-800">📊 Dashboard Stok</h1>
+                <h1 class="text-xl font-bold text-gray-800">📊 Dashboard CS WKB</h1>
                 <button onclick="UI.closeSidebar()" class="md:hidden text-gray-600 hover:text-gray-800">
                     <i class="fas fa-times text-lg"></i>
                 </button>
@@ -73,7 +73,7 @@
                 <i class="fas fa-tags mr-3"></i>Rekap per Brand
             </a>
             <a href="#" class="sidebar-item flex items-center px-4 py-3 text-gray-700 rounded-lg" onclick="UI.showSection('stok-hari-ini')">
-                <i class="fas fa-box mr-3"></i>Stok Hari Ini
+                <i class="fas fa-calendar-day mr-3"></i>Stok Tanggal Target
             </a>
             <a href="#" class="sidebar-item flex items-center px-4 py-3 text-gray-700 rounded-lg" onclick="UI.showSection('grafik')">
                 <i class="fas fa-chart-bar mr-3"></i>Grafik Ringkas
@@ -97,8 +97,8 @@
         <!-- Dashboard Section -->
         <div id="dashboard-section" class="section">
             <div class="mb-6">
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Dashboard Stok Produk</h2>
-                <p class="text-gray-600">Kelola dan pantau stok produk secara real-time</p>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Dashboard CS WKB</h2>
+                <p class="text-gray-600">PPIC</p>
             </div>
 
             <!-- Quick Stats -->
@@ -218,7 +218,7 @@
             </div>
         </div>
 
-        <!-- Other Sections (Simplified) -->
+        <!-- Rekap per PO Section -->
         <div id="rekap-po-section" class="section hidden">
             <div class="flex justify-between items-center mb-6">
                 <div>
@@ -265,15 +265,55 @@
             </div>
         </div>
 
+        <!-- Rekap per Brand Section -->
         <div id="rekap-brand-section" class="section hidden">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">🏷️ Rekap per Brand</h2>
-            <div id="brandSummary" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">🏷️ Rekap per Brand</h2>
+                    <p class="text-gray-600 mt-1">Total <span id="totalBrandCount" class="font-semibold text-blue-600">0</span> brand ditemukan</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm text-gray-500">Total Stok</div>
+                    <div class="text-lg font-bold text-green-600" id="totalBrandKg">0 kg</div>
+                </div>
+            </div>
+            
+            <!-- Brand Statistics -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white p-4 rounded-lg shadow text-center">
+                    <div class="text-2xl font-bold text-blue-600" id="totalBrandItems">0</div>
+                    <div class="text-sm text-gray-600">Total Item</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow text-center">
+                    <div class="text-2xl font-bold text-green-600" id="totalBrandWeight">0</div>
+                    <div class="text-sm text-gray-600">Total Kg</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow text-center">
+                    <div class="text-2xl font-bold text-purple-600" id="avgProductsPerBrand">0</div>
+                    <div class="text-sm text-gray-600">Rata-rata Produk/Brand</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow text-center">
+                    <div class="text-2xl font-bold text-orange-600" id="avgKgPerBrand">0</div>
+                    <div class="text-sm text-gray-600">Rata-rata Kg/Brand</div>
+                </div>
+            </div>
+
+            <div id="brandSummary" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Brand cards will be populated by JavaScript -->
             </div>
         </div>
 
+        <!-- Stok Tanggal Target Section -->
         <div id="stok-hari-ini-section" class="section hidden">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">📦 Stok Hari Ini</h2>
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">📦 Stok Tanggal Target</h2>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm text-gray-500">Tanggal Target</div>
+                    <div class="text-lg font-bold text-blue-600" id="targetDateDisplay">-</div>
+                </div>
+            </div>
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
                     <div class="text-center">
@@ -299,16 +339,21 @@
             </div>
         </div>
 
+        <!-- Grafik Section -->
         <div id="grafik-section" class="section hidden">
             <h2 class="text-2xl font-bold text-gray-800 mb-6">📊 Grafik Ringkas</h2>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="bg-white p-6 rounded-lg shadow">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">Stok per Brand</h3>
-                    <canvas id="brandChart" width="400" height="200"></canvas>
+                    <div style="height: 250px;">
+                        <canvas id="brandChart"></canvas>
+                    </div>
                 </div>
                 <div class="bg-white p-6 rounded-lg shadow">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">Trend Stok Mingguan</h3>
-                    <canvas id="trendChart" width="400" height="200"></canvas>
+                    <div style="height: 250px;">
+                        <canvas id="trendChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -321,7 +366,8 @@
             SHEET_NAME: 'WKB',
             API_KEY: 'AIzaSyBBY9oqeEjjpVnIXOhdkhR6xuTsCr5gYU8',
             ITEMS_PER_PAGE: 10,
-            REFRESH_INTERVAL: 300000 // 5 minutes
+            REFRESH_INTERVAL: 300000, // 5 minutes
+            TARGET_DATE_CELL: 'I1' // Cell that contains the target date
         };
 
         // Data Management
@@ -333,6 +379,26 @@
             sortColumn: -1,
             sortDirection: 'asc',
             showAllPOs: false,
+            targetDate: null, // Date from cell I1
+
+            async fetchTargetDate() {
+                try {
+                    const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.TARGET_DATE_CELL}?key=${CONFIG.API_KEY}`;
+                    const response = await fetch(url);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.values && data.values[0] && data.values[0][0]) {
+                            this.targetDate = data.values[0][0];
+                            console.log('Target date from I1:', this.targetDate);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error fetching target date:', error);
+                    // Fallback to today's date
+                    this.targetDate = new Date().toISOString().split('T')[0];
+                }
+            },
 
             async fetchData() {
                 if (this.isLoading) return;
@@ -341,6 +407,9 @@
                 UI.showLoading();
                 
                 try {
+                    // Fetch target date first
+                    await this.fetchTargetDate();
+                    
                     const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}?key=${CONFIG.API_KEY}`;
                     const response = await fetch(url);
                     
@@ -375,6 +444,11 @@
             },
 
             loadSampleData() {
+                // Set fallback target date if not already set
+                if (!this.targetDate) {
+                    this.targetDate = new Date().toISOString().split('T')[0];
+                }
+                
                 this.stockData = [
                     ['2024-01-15', 'Beras Premium', '25kg', 'Brand A', 'BP001', 'PO-2024-001', '20', '500'],
                     ['2024-01-15', 'Gula Pasir', '1kg', 'Brand B', 'GP002', 'PO-2024-001', '100', '100'],
@@ -395,6 +469,7 @@
                 this.updateStats();
                 this.updateSummaries();
                 Charts.updateCharts();
+                Utils.updateCurrentDate(); // Update the target date display
             },
 
             populateFilters() {
@@ -460,15 +535,14 @@
                 document.getElementById('uniqueProducts').textContent = uniqueProducts;
                 document.getElementById('uniqueBrands').textContent = uniqueBrands;
                 
-                // Update today's stats
-                const today = new Date().toISOString().split('T')[0];
-                const todayData = this.filteredData.filter(row => row[0] === today);
-                const todayKg = todayData.reduce((sum, row) => sum + (parseInt(row[7]) || 0), 0);
+                // Update target date stats (from cell I1)
+                const targetDateData = this.getTargetDateData();
+                const targetKg = targetDateData.reduce((sum, row) => sum + (parseInt(row[7]) || 0), 0);
                 
-                document.getElementById('todayItems').textContent = todayData.length;
-                document.getElementById('todayKg').textContent = todayKg.toLocaleString();
-                document.getElementById('todayProducts').textContent = new Set(todayData.map(row => row[1])).size;
-                document.getElementById('todayBrands').textContent = new Set(todayData.map(row => row[3])).size;
+                document.getElementById('todayItems').textContent = targetDateData.length;
+                document.getElementById('todayKg').textContent = targetKg.toLocaleString();
+                document.getElementById('todayProducts').textContent = new Set(targetDateData.map(row => row[1])).size;
+                document.getElementById('todayBrands').textContent = new Set(targetDateData.map(row => row[3])).size;
             },
 
             updateSummaries() {
@@ -546,33 +620,88 @@
                 
                 // Brand Summary
                 const brandSummary = {};
+                const brandItemCount = {};
                 this.filteredData.forEach(row => {
                     const brand = row[3];
                     const product = row[1];
-                    if (!brandSummary[brand]) brandSummary[brand] = {};
+                    if (!brandSummary[brand]) {
+                        brandSummary[brand] = {};
+                        brandItemCount[brand] = 0;
+                    }
                     if (!brandSummary[brand][product]) brandSummary[brand][product] = 0;
                     brandSummary[brand][product] += parseInt(row[7]) || 0;
+                    brandItemCount[brand]++;
                 });
                 
-                document.getElementById('brandSummary').innerHTML = Object.entries(brandSummary)
-                    .slice(0, 4)
-                    .map(([brand, products]) => {
+                // Calculate brand statistics
+                const totalBrands = Object.keys(brandSummary).length;
+                const totalBrandItems = Object.values(brandItemCount).reduce((sum, count) => sum + count, 0);
+                const totalBrandWeight = Object.values(brandSummary).reduce((sum, products) => 
+                    sum + Object.values(products).reduce((pSum, kg) => pSum + kg, 0), 0);
+                const avgProductsPerBrand = totalBrands > 0 ? Math.round(
+                    Object.values(brandSummary).reduce((sum, products) => sum + Object.keys(products).length, 0) / totalBrands
+                ) : 0;
+                const avgKgPerBrand = totalBrands > 0 ? Math.round(totalBrandWeight / totalBrands) : 0;
+                
+                // Update brand statistics
+                document.getElementById('totalBrandCount').textContent = totalBrands;
+                document.getElementById('totalBrandKg').textContent = totalBrandWeight.toLocaleString() + ' kg';
+                document.getElementById('totalBrandItems').textContent = totalBrandItems.toLocaleString();
+                document.getElementById('totalBrandWeight').textContent = totalBrandWeight.toLocaleString();
+                document.getElementById('avgProductsPerBrand').textContent = avgProductsPerBrand;
+                document.getElementById('avgKgPerBrand').textContent = avgKgPerBrand;
+                
+                // Sort brands by total weight (descending)
+                const sortedBrands = Object.entries(brandSummary).sort((a, b) => {
+                    const totalA = Object.values(a[1]).reduce((sum, kg) => sum + kg, 0);
+                    const totalB = Object.values(b[1]).reduce((sum, kg) => sum + kg, 0);
+                    return totalB - totalA;
+                });
+                
+                document.getElementById('brandSummary').innerHTML = sortedBrands
+                    .map(([brand, products], index) => {
                         const total = Object.values(products).reduce((sum, kg) => sum + kg, 0);
+                        const productCount = Object.keys(products).length;
+                        const itemCount = brandItemCount[brand];
+                        const avgPerProduct = productCount > 0 ? Math.round(total / productCount) : 0;
+                        
                         return `
-                            <div class="bg-white p-6 rounded-lg shadow">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-4">${brand}</h3>
+                            <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow">
+                                <div class="flex justify-between items-start mb-4">
+                                    <h3 class="text-lg font-semibold text-gray-800">${brand}</h3>
+                                    <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">#${index + 1}</span>
+                                </div>
                                 <div class="space-y-3">
-                                    ${Object.entries(products).slice(0, 3).map(([product, kg]) => `
-                                        <div class="flex justify-between">
-                                            <span class="text-gray-600">${product}</span>
-                                            <span class="font-medium">${kg.toLocaleString()} kg</span>
-                                        </div>
-                                    `).join('')}
-                                    <div class="border-t pt-2">
-                                        <div class="flex justify-between font-semibold">
-                                            <span>Total</span>
-                                            <span>${total.toLocaleString()} kg</span>
-                                        </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Total Item:</span>
+                                        <span class="font-medium text-blue-600">${itemCount}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Total Kg:</span>
+                                        <span class="font-medium text-green-600">${total.toLocaleString()} kg</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Jenis Produk:</span>
+                                        <span class="font-medium text-purple-600">${productCount}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Rata-rata/Produk:</span>
+                                        <span class="font-medium text-orange-600">${avgPerProduct} kg</span>
+                                    </div>
+                                    <div class="pt-2 border-t">
+                                        <div class="text-xs text-gray-500 mb-2">Top 3 Produk:</div>
+                                        ${Object.entries(products)
+                                            .sort((a, b) => b[1] - a[1])
+                                            .slice(0, 3)
+                                            .map(([product, kg]) => `
+                                                <div class="flex justify-between text-sm">
+                                                    <span class="text-gray-600 truncate mr-2">${product}</span>
+                                                    <span class="font-medium">${kg.toLocaleString()} kg</span>
+                                                </div>
+                                            `).join('')}
+                                    </div>
+                                    <div class="pt-2 border-t">
+                                        <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Aktif</span>
                                     </div>
                                 </div>
                             </div>
@@ -709,6 +838,41 @@
             toggleShowAllPOs() {
                 this.showAllPOs = !this.showAllPOs;
                 this.updateSummaries();
+            },
+
+            getTargetDateData() {
+                if (!this.targetDate) return [];
+                
+                // Normalize target date for comparison
+                const normalizedTargetDate = this.normalizeDate(this.targetDate);
+                
+                return this.filteredData.filter(row => {
+                    const rowDate = this.normalizeDate(row[0]);
+                    return rowDate === normalizedTargetDate;
+                });
+            },
+
+            normalizeDate(dateString) {
+                if (!dateString || dateString === '-') return '';
+                
+                // Try to parse and normalize to YYYY-MM-DD format
+                const date = this.parseDate(dateString);
+                if (isNaN(date.getTime())) return '';
+                
+                const year = date.getFullYear();
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const day = date.getDate().toString().padStart(2, '0');
+                
+                return `${year}-${month}-${day}`;
+            },
+
+            getFormattedTargetDate() {
+                if (!this.targetDate) return new Date().toLocaleDateString('id-ID');
+                
+                const date = this.parseDate(this.targetDate);
+                if (isNaN(date.getTime())) return new Date().toLocaleDateString('id-ID');
+                
+                return date.toLocaleDateString('id-ID');
             }
         };
 
@@ -995,7 +1159,19 @@
             },
 
             setCurrentDate() {
-                document.getElementById('currentDate').textContent = new Date().toLocaleDateString('id-ID');
+                // This will be updated after data is fetched
+                document.getElementById('currentDate').textContent = 'Memuat...';
+            },
+
+            updateCurrentDate() {
+                const formattedDate = DataManager.getFormattedTargetDate();
+                document.getElementById('currentDate').textContent = formattedDate;
+                
+                // Also update the target date display in the header
+                const targetDateElement = document.getElementById('targetDateDisplay');
+                if (targetDateElement) {
+                    targetDateElement.textContent = formattedDate;
+                }
             }
         };
 
@@ -1009,5 +1185,5 @@
             setInterval(() => DataManager.refreshData(), CONFIG.REFRESH_INTERVAL);
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'966dcca3d6b78093',t:'MTc1MzgwNDUxNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'966df9e5e6b8ea86',t:'MTc1MzgwNjM2OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
