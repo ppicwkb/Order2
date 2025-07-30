@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard CS WKB</title>
+    <title>Dashboard Stok wkb</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -44,7 +44,7 @@
         <button onclick="UI.toggleSidebar()" class="text-gray-600 hover:text-gray-800">
             <i class="fas fa-bars text-xl"></i>
         </button>
-        <h1 class="text-lg font-bold text-gray-800">📊 Dashboard CS WKB</h1>
+        <h1 class="text-lg font-bold text-gray-800">📊 Dashboard Stok</h1>
         <div class="w-6"></div>
     </div>
 
@@ -55,7 +55,7 @@
     <div class="sidebar fixed left-0 top-0 h-full w-64 bg-white shadow-lg z-20">
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
-                <h1 class="text-xl font-bold text-gray-800">📊 Dashboard CS WKB</h1>
+                <h1 class="text-xl font-bold text-gray-800">📊 Dashboard Stok</h1>
                 <button onclick="UI.closeSidebar()" class="md:hidden text-gray-600 hover:text-gray-800">
                     <i class="fas fa-times text-lg"></i>
                 </button>
@@ -72,8 +72,11 @@
             <a href="#" class="sidebar-item flex items-center px-4 py-3 text-gray-700 rounded-lg" onclick="UI.showSection('rekap-brand')">
                 <i class="fas fa-tags mr-3"></i>Rekap per Brand
             </a>
+            <a href="#" class="sidebar-item flex items-center px-4 py-3 text-gray-700 rounded-lg" onclick="UI.showSection('rekap-lokasi')">
+                <i class="fas fa-map-marker-alt mr-3"></i>Rekap per Lokasi
+            </a>
             <a href="#" class="sidebar-item flex items-center px-4 py-3 text-gray-700 rounded-lg" onclick="UI.showSection('stok-hari-ini')">
-                <i class="fas fa-calendar-day mr-3"></i>Stok Tanggal Target
+                <i class="fas fa-calendar-day mr-3"></i>Stok Masuk Tanggal
             </a>
             <a href="#" class="sidebar-item flex items-center px-4 py-3 text-gray-700 rounded-lg" onclick="UI.showSection('grafik')">
                 <i class="fas fa-chart-bar mr-3"></i>Grafik Ringkas
@@ -97,7 +100,7 @@
         <!-- Dashboard Section -->
         <div id="dashboard-section" class="section">
             <div class="mb-6">
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Dashboard CS WKB</h2>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Dashboard Stok WKB</h2>
                 <p class="text-gray-600">PPIC</p>
             </div>
 
@@ -142,6 +145,22 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Brand</label>
                         <select id="brandFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             <option value="">Semua Brand</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Cari Produk/Brand</label>
+                        <div class="relative">
+                            <input type="text" id="searchProduct" placeholder="Ketik nama produk atau brand..." class="w-full px-3 py-2 pl-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Lokasi</label>
+                        <select id="locationFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">Semua Lokasi</option>
                         </select>
                     </div>
                 </div>
@@ -191,6 +210,9 @@
                                 </th>
                                 <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="DataManager.sortTable(7)">
                                     Jumlah Kg <i class="fas fa-sort ml-1"></i>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="DataManager.sortTable(8)">
+                                    Lokasi <i class="fas fa-sort ml-1"></i>
                                 </th>
                             </tr>
                         </thead>
@@ -303,14 +325,52 @@
             </div>
         </div>
 
+        <!-- Rekap per Lokasi Section -->
+        <div id="rekap-lokasi-section" class="section hidden">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">📍 Rekap per Lokasi</h2>
+                    <p class="text-gray-600 mt-1">Total <span id="totalLocationCount" class="font-semibold text-blue-600">0</span> lokasi ditemukan</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm text-gray-500">Total Stok</div>
+                    <div class="text-lg font-bold text-green-600" id="totalLocationKg">0 kg</div>
+                </div>
+            </div>
+            
+            <!-- Location Statistics -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white p-4 rounded-lg shadow text-center">
+                    <div class="text-2xl font-bold text-blue-600" id="totalLocationItems">0</div>
+                    <div class="text-sm text-gray-600">Total Item</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow text-center">
+                    <div class="text-2xl font-bold text-green-600" id="totalLocationWeight">0</div>
+                    <div class="text-sm text-gray-600">Total Kg</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow text-center">
+                    <div class="text-2xl font-bold text-purple-600" id="avgProductsPerLocation">0</div>
+                    <div class="text-sm text-gray-600">Rata-rata Produk/Lokasi</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow text-center">
+                    <div class="text-2xl font-bold text-orange-600" id="avgKgPerLocation">0</div>
+                    <div class="text-sm text-gray-600">Rata-rata Kg/Lokasi</div>
+                </div>
+            </div>
+
+            <div id="locationSummary" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Location cards will be populated by JavaScript -->
+            </div>
+        </div>
+
         <!-- Stok Tanggal Target Section -->
         <div id="stok-hari-ini-section" class="section hidden">
             <div class="flex justify-between items-center mb-6">
                 <div>
-                    <h2 class="text-2xl font-bold text-gray-800">📦 Stok Tanggal Target</h2>
+                    <h2 class="text-2xl font-bold text-gray-800">📦 Stok Masuk Tanggal</h2>
                 </div>
                 <div class="text-right">
-                    <div class="text-sm text-gray-500">Tanggal Target</div>
+                    <div class="text-sm text-gray-500">Tanggal Masuk</div>
                     <div class="text-lg font-bold text-blue-600" id="targetDateDisplay">-</div>
                 </div>
             </div>
@@ -359,6 +419,72 @@
         </div>
     </div>
 
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md mx-4">
+            <div class="text-center mb-6">
+                <div class="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                    <i class="fas fa-lock text-blue-600 text-2xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800">🔐 Login Dashboard</h2>
+                <p class="text-gray-600 mt-2">Masukkan kredensial untuk mengakses dashboard stok</p>
+            </div>
+            
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                    <div class="relative">
+                        <input type="text" id="username" required 
+                               class="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               placeholder="Masukkan username">
+                        <i class="fas fa-user absolute left-3 top-4 text-gray-400"></i>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <div class="relative">
+                        <input type="password" id="password" required 
+                               class="w-full px-4 py-3 pl-10 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               placeholder="Masukkan password">
+                        <i class="fas fa-lock absolute left-3 top-4 text-gray-400"></i>
+                        <button type="button" onclick="Auth.togglePassword()" class="absolute right-3 top-4 text-gray-400 hover:text-gray-600">
+                            <i id="passwordToggle" class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="loginError" class="hidden bg-red-50 border border-red-200 rounded-lg p-3">
+                    <div class="flex items-center">
+                        <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                        <span class="text-red-700 text-sm">Username atau password salah!</span>
+                    </div>
+                </div>
+                
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center">
+                    <span id="loginButtonText">
+                        <i class="fas fa-sign-in-alt mr-2"></i>Masuk Dashboard
+                    </span>
+                    <div id="loginSpinner" class="hidden">
+                        <div class="loading-spinner w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                        Memverifikasi...
+                    </div>
+                </button>
+            </form>
+            
+            <div class="mt-6 pt-6 border-t border-gray-200">
+                <div class="bg-blue-50 rounded-lg p-4">
+                    <h4 class="text-sm font-medium text-blue-800 mb-2">🔐 Akses Dashboard Stok</h4>
+                    <div class="text-xs text-blue-600 space-y-1">
+                        <div><strong>* Login sesuai peran:</strong> Admin, Manager, atau Staff.</div>
+                        <div>* Gunakan username dan password yang tersedia.</div>
+                        <div>* Setiap peran memiliki akses dan fitur berbeda.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Configuration
         const CONFIG = {
@@ -367,7 +493,158 @@
             API_KEY: 'AIzaSyBBY9oqeEjjpVnIXOhdkhR6xuTsCr5gYU8',
             ITEMS_PER_PAGE: 10,
             REFRESH_INTERVAL: 300000, // 5 minutes
-            TARGET_DATE_CELL: 'I1' // Cell that contains the target date
+            TARGET_DATE_CELL: 'J1' // Cell that contains the target date
+        };
+
+        // Authentication System
+        const Auth = {
+            users: {
+                'admin': { password: '1', role: 'admin', name: 'Administrator' },
+                'manager': { password: '4', role: 'manager', name: 'Manager' },
+                'staff': { password: '6', role: 'staff', name: 'Staff' }
+            },
+            
+            currentUser: null,
+            
+            init() {
+                // Check if user is already logged in
+                const savedUser = localStorage.getItem('dashboardUser');
+                if (savedUser) {
+                    try {
+                        this.currentUser = JSON.parse(savedUser);
+                        this.showDashboard();
+                    } catch (e) {
+                        this.showLogin();
+                    }
+                } else {
+                    this.showLogin();
+                }
+                
+                // Setup login form
+                document.getElementById('loginForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleLogin();
+                });
+            },
+            
+            showLogin() {
+                document.getElementById('loginModal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            },
+            
+            hideLogin() {
+                document.getElementById('loginModal').classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            },
+            
+            showDashboard() {
+                this.hideLogin();
+                this.updateUserInfo();
+                // Initialize dashboard after successful login
+                setTimeout(() => {
+                    Utils.setCurrentDate();
+                    Charts.init();
+                    DataManager.fetchData();
+                }, 100);
+            },
+            
+            async handleLogin() {
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value;
+                const errorDiv = document.getElementById('loginError');
+                const buttonText = document.getElementById('loginButtonText');
+                const spinner = document.getElementById('loginSpinner');
+                
+                // Show loading
+                buttonText.classList.add('hidden');
+                spinner.classList.remove('hidden');
+                errorDiv.classList.add('hidden');
+                
+                // Simulate API call delay
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Check credentials
+                if (this.users[username] && this.users[username].password === password) {
+                    // Success
+                    this.currentUser = {
+                        username: username,
+                        name: this.users[username].name,
+                        role: this.users[username].role,
+                        loginTime: new Date().toISOString()
+                    };
+                    
+                    // Save to localStorage
+                    localStorage.setItem('dashboardUser', JSON.stringify(this.currentUser));
+                    
+                    // Show success message briefly
+                    buttonText.innerHTML = '<i class="fas fa-check mr-2"></i>Login Berhasil!';
+                    buttonText.classList.remove('hidden');
+                    spinner.classList.add('hidden');
+                    
+                    setTimeout(() => {
+                        this.showDashboard();
+                    }, 500);
+                    
+                } else {
+                    // Error
+                    buttonText.classList.remove('hidden');
+                    spinner.classList.add('hidden');
+                    errorDiv.classList.remove('hidden');
+                    
+                    // Clear password field
+                    document.getElementById('password').value = '';
+                }
+            },
+            
+            updateUserInfo() {
+                if (!this.currentUser) return;
+                
+                // Add user info to sidebar
+                const sidebar = document.querySelector('.sidebar');
+                const userInfo = document.createElement('div');
+                userInfo.className = 'px-4 py-3 border-b border-gray-200';
+                userInfo.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-user text-blue-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium text-gray-800">${this.currentUser.name}</div>
+                                <div class="text-xs text-gray-500 capitalize">${this.currentUser.role}</div>
+                            </div>
+                        </div>
+                        <button onclick="Auth.logout()" class="text-gray-400 hover:text-red-500 transition-colors" title="Logout">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </div>
+                `;
+                
+                // Insert after the header
+                const header = sidebar.querySelector('.p-6');
+                header.parentNode.insertBefore(userInfo, header.nextSibling);
+            },
+            
+            logout() {
+                if (confirm('Yakin ingin keluar dari dashboard?')) {
+                    localStorage.removeItem('dashboardUser');
+                    this.currentUser = null;
+                    location.reload();
+                }
+            },
+            
+            togglePassword() {
+                const passwordInput = document.getElementById('password');
+                const toggleIcon = document.getElementById('passwordToggle');
+                
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    toggleIcon.className = 'fas fa-eye-slash';
+                } else {
+                    passwordInput.type = 'password';
+                    toggleIcon.className = 'fas fa-eye';
+                }
+            }
         };
 
         // Data Management
@@ -420,7 +697,7 @@
                     if (data.values && data.values.length > 1) {
                         this.stockData = data.values.slice(1).map(row => {
                             const processedRow = [];
-                            for (let i = 0; i < 8; i++) {
+                            for (let i = 0; i < 9; i++) {
                                 processedRow[i] = row[i] || '-';
                             }
                             return processedRow;
@@ -450,14 +727,14 @@
                 }
                 
                 this.stockData = [
-                    ['2024-01-15', 'Beras Premium', '25kg', 'Brand A', 'BP001', 'PO-2024-001', '20', '500'],
-                    ['2024-01-15', 'Gula Pasir', '1kg', 'Brand B', 'GP002', 'PO-2024-001', '100', '100'],
-                    ['2024-01-16', 'Minyak Goreng', '2L', 'Brand C', 'MG003', 'PO-2024-002', '50', '100'],
-                    ['2024-01-16', 'Tepung Terigu', '1kg', 'Brand A', 'TT004', 'PO-2024-002', '75', '75'],
-                    ['2024-01-17', 'Beras Premium', '25kg', 'Brand B', 'BP005', 'PO-2024-003', '15', '375'],
-                    ['2024-01-17', 'Gula Pasir', '1kg', 'Brand A', 'GP006', 'PO-2024-003', '80', '80'],
-                    ['2024-01-18', 'Minyak Goreng', '2L', 'Brand B', 'MG007', 'PO-2024-004', '30', '60'],
-                    ['2024-01-18', 'Tepung Terigu', '1kg', 'Brand C', 'TT008', 'PO-2024-004', '60', '60']
+                    ['2024-01-15', 'Beras Premium', '25kg', 'Brand A', 'BP001', 'PO-2024-001', '20', '500', 'Gudang A'],
+                    ['2024-01-15', 'Gula Pasir', '1kg', 'Brand B', 'GP002', 'PO-2024-001', '100', '100', 'Gudang B'],
+                    ['2024-01-16', 'Minyak Goreng', '2L', 'Brand C', 'MG003', 'PO-2024-002', '50', '100', 'Gudang A'],
+                    ['2024-01-16', 'Tepung Terigu', '1kg', 'Brand A', 'TT004', 'PO-2024-002', '75', '75', 'Gudang C'],
+                    ['2024-01-17', 'Beras Premium', '25kg', 'Brand B', 'BP005', 'PO-2024-003', '15', '375', 'Gudang B'],
+                    ['2024-01-17', 'Gula Pasir', '1kg', 'Brand A', 'GP006', 'PO-2024-003', '80', '80', 'Gudang A'],
+                    ['2024-01-18', 'Minyak Goreng', '2L', 'Brand B', 'MG007', 'PO-2024-004', '30', '60', 'Gudang C'],
+                    ['2024-01-18', 'Tepung Terigu', '1kg', 'Brand C', 'TT008', 'PO-2024-004', '60', '60', 'Gudang B']
                 ];
                 this.filteredData = [...this.stockData];
                 this.updateUI();
@@ -475,15 +752,20 @@
             populateFilters() {
                 const products = [...new Set(this.stockData.map(row => row[1]).filter(item => item && item !== '-'))];
                 const brands = [...new Set(this.stockData.map(row => row[3]).filter(item => item && item !== '-'))];
+                const locations = [...new Set(this.stockData.map(row => row[8]).filter(item => item && item !== '-'))];
                 
                 const productFilter = document.getElementById('productFilter');
                 const brandFilter = document.getElementById('brandFilter');
+                const locationFilter = document.getElementById('locationFilter');
                 
                 productFilter.innerHTML = '<option value="">Semua Produk</option>' + 
                     products.map(p => `<option value="${p}">${p}</option>`).join('');
                 
                 brandFilter.innerHTML = '<option value="">Semua Brand</option>' + 
                     brands.map(b => `<option value="${b}">${b}</option>`).join('');
+                
+                locationFilter.innerHTML = '<option value="">Semua Lokasi</option>' + 
+                    locations.map(l => `<option value="${l}">${l}</option>`).join('');
             },
 
             populateTable() {
@@ -503,6 +785,9 @@
                         <td class="px-4 py-3 text-sm text-gray-900 font-mono">${row[5]}</td>
                         <td class="px-4 py-3 text-sm text-gray-900 text-right">${row[6]}</td>
                         <td class="px-4 py-3 text-sm text-gray-900 text-right font-medium">${row[7]} kg</td>
+                        <td class="px-4 py-3 text-sm text-gray-900">
+                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">${row[8] || '-'}</span>
+                        </td>
                     </tr>
                 `).join('');
                 
@@ -707,6 +992,96 @@
                             </div>
                         `;
                     }).join('');
+
+                // Location Summary
+                const locationSummary = {};
+                const locationItemCount = {};
+                this.filteredData.forEach(row => {
+                    const location = row[8] || 'Tidak Diketahui';
+                    const product = row[1];
+                    if (!locationSummary[location]) {
+                        locationSummary[location] = {};
+                        locationItemCount[location] = 0;
+                    }
+                    if (!locationSummary[location][product]) locationSummary[location][product] = 0;
+                    locationSummary[location][product] += parseInt(row[7]) || 0;
+                    locationItemCount[location]++;
+                });
+                
+                // Calculate location statistics
+                const totalLocations = Object.keys(locationSummary).length;
+                const totalLocationItems = Object.values(locationItemCount).reduce((sum, count) => sum + count, 0);
+                const totalLocationWeight = Object.values(locationSummary).reduce((sum, products) => 
+                    sum + Object.values(products).reduce((pSum, kg) => pSum + kg, 0), 0);
+                const avgProductsPerLocation = totalLocations > 0 ? Math.round(
+                    Object.values(locationSummary).reduce((sum, products) => sum + Object.keys(products).length, 0) / totalLocations
+                ) : 0;
+                const avgKgPerLocation = totalLocations > 0 ? Math.round(totalLocationWeight / totalLocations) : 0;
+                
+                // Update location statistics
+                document.getElementById('totalLocationCount').textContent = totalLocations;
+                document.getElementById('totalLocationKg').textContent = totalLocationWeight.toLocaleString() + ' kg';
+                document.getElementById('totalLocationItems').textContent = totalLocationItems.toLocaleString();
+                document.getElementById('totalLocationWeight').textContent = totalLocationWeight.toLocaleString();
+                document.getElementById('avgProductsPerLocation').textContent = avgProductsPerLocation;
+                document.getElementById('avgKgPerLocation').textContent = avgKgPerLocation;
+                
+                // Sort locations by total weight (descending)
+                const sortedLocations = Object.entries(locationSummary).sort((a, b) => {
+                    const totalA = Object.values(a[1]).reduce((sum, kg) => sum + kg, 0);
+                    const totalB = Object.values(b[1]).reduce((sum, kg) => sum + kg, 0);
+                    return totalB - totalA;
+                });
+                
+                document.getElementById('locationSummary').innerHTML = sortedLocations
+                    .map(([location, products], index) => {
+                        const total = Object.values(products).reduce((sum, kg) => sum + kg, 0);
+                        const productCount = Object.keys(products).length;
+                        const itemCount = locationItemCount[location];
+                        const avgPerProduct = productCount > 0 ? Math.round(total / productCount) : 0;
+                        
+                        return `
+                            <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow">
+                                <div class="flex justify-between items-start mb-4">
+                                    <h3 class="text-lg font-semibold text-gray-800">${location}</h3>
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">#${index + 1}</span>
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Total Item:</span>
+                                        <span class="font-medium text-blue-600">${itemCount}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Total Kg:</span>
+                                        <span class="font-medium text-green-600">${total.toLocaleString()} kg</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Jenis Produk:</span>
+                                        <span class="font-medium text-purple-600">${productCount}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Rata-rata/Produk:</span>
+                                        <span class="font-medium text-orange-600">${avgPerProduct} kg</span>
+                                    </div>
+                                    <div class="pt-2 border-t">
+                                        <div class="text-xs text-gray-500 mb-2">Top 3 Produk:</div>
+                                        ${Object.entries(products)
+                                            .sort((a, b) => b[1] - a[1])
+                                            .slice(0, 3)
+                                            .map(([product, kg]) => `
+                                                <div class="flex justify-between text-sm">
+                                                    <span class="text-gray-600 truncate mr-2">${product}</span>
+                                                    <span class="font-medium">${kg.toLocaleString()} kg</span>
+                                                </div>
+                                            `).join('')}
+                                    </div>
+                                    <div class="pt-2 border-t">
+                                        <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Aktif</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
             },
 
             applyFilters() {
@@ -714,8 +1089,10 @@
                 const endDate = document.getElementById('endDate').value;
                 const product = document.getElementById('productFilter').value;
                 const brand = document.getElementById('brandFilter').value;
+                const location = document.getElementById('locationFilter').value;
+                const searchTerm = document.getElementById('searchProduct').value.toLowerCase();
                 
-                console.log('Filter applied:', { startDate, endDate, product, brand });
+                console.log('Filter applied:', { startDate, endDate, product, brand, location, searchTerm });
                 
                 this.filteredData = this.stockData.filter(row => {
                     let matchesDate = true;
@@ -736,8 +1113,14 @@
                     
                     const matchesProduct = !product || row[1] === product;
                     const matchesBrand = !brand || row[3] === brand;
+                    const matchesLocation = !location || row[8] === location;
                     
-                    return matchesDate && matchesProduct && matchesBrand;
+                    // Enhanced search: search in both product name and brand
+                    const matchesSearch = !searchTerm || 
+                        row[1].toLowerCase().includes(searchTerm) || // Search in product name
+                        row[3].toLowerCase().includes(searchTerm);   // Search in brand name
+                    
+                    return matchesDate && matchesProduct && matchesBrand && matchesLocation && matchesSearch;
                 });
                 
                 console.log(`Filtered ${this.filteredData.length} items from ${this.stockData.length} total`);
@@ -784,6 +1167,8 @@
                 document.getElementById('endDate').value = '';
                 document.getElementById('productFilter').value = '';
                 document.getElementById('brandFilter').value = '';
+                document.getElementById('locationFilter').value = '';
+                document.getElementById('searchProduct').value = '';
                 
                 this.filteredData = [...this.stockData];
                 this.currentPage = 1;
@@ -880,7 +1265,7 @@
         const UI = {
             showLoading() {
                 document.getElementById('stockTableBody').innerHTML = `
-                    <tr><td colspan="8" class="px-6 py-12 text-center">
+                    <tr><td colspan="9" class="px-6 py-12 text-center">
                         <div class="flex flex-col items-center">
                             <div class="loading-spinner w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mb-4"></div>
                             <p class="text-gray-600">Memuat data...</p>
@@ -895,7 +1280,7 @@
 
             showError(message) {
                 document.getElementById('stockTableBody').innerHTML = `
-                    <tr><td colspan="8" class="px-6 py-12 text-center">
+                    <tr><td colspan="9" class="px-6 py-12 text-center">
                         <div class="flex flex-col items-center">
                             <i class="fas fa-exclamation-triangle text-yellow-500 text-3xl mb-4"></i>
                             <p class="text-gray-600 mb-2">Gagal memuat data</p>
@@ -1134,9 +1519,9 @@
                 doc.text(`Diekspor: ${new Date().toLocaleDateString('id-ID')}`, 14, 30);
                 
                 // Table
-                const headers = ['Tanggal', 'Produk', 'Packing', 'Brand', 'Kode', 'PO', 'mc', 'Kg'];
+                const headers = ['Tanggal', 'Produk', 'Packing', 'Brand', 'Kode', 'PO', 'mc', 'Kg', 'Lokasi'];
                 const tableData = DataManager.filteredData.map(row => [
-                    row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7]
+                    row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8] || '-'
                 ]);
                 
                 doc.autoTable({
@@ -1155,7 +1540,7 @@
                 doc.setFont(undefined, 'bold');
                 doc.text(`Total: ${DataManager.filteredData.length} item, ${totalKg.toLocaleString()} kg`, 14, finalY);
                 
-                doc.save('dashboard-stok-produk.pdf');
+                doc.save('dashboard-stok-wkb.pdf');
             },
 
             setCurrentDate() {
@@ -1177,13 +1562,28 @@
 
         // Initialize Application
         document.addEventListener('DOMContentLoaded', () => {
-            Utils.setCurrentDate();
-            Charts.init();
-            DataManager.fetchData();
+            // Initialize authentication first
+            Auth.init();
             
-            // Auto refresh every 5 minutes
-            setInterval(() => DataManager.refreshData(), CONFIG.REFRESH_INTERVAL);
+            // Add real-time search functionality
+            const searchInput = document.getElementById('searchProduct');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    // Debounce search to avoid too many calls
+                    clearTimeout(this.searchTimeout);
+                    this.searchTimeout = setTimeout(() => {
+                        DataManager.applyFilters();
+                    }, 300);
+                });
+            }
+            
+            // Auto refresh every 5 minutes (only if logged in)
+            setInterval(() => {
+                if (Auth.currentUser) {
+                    DataManager.refreshData();
+                }
+            }, CONFIG.REFRESH_INTERVAL);
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'966df9e5e6b8ea86',t:'MTc1MzgwNjM2OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'966e8a1271816d06',t:'MTc1MzgxMjI3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
