@@ -988,6 +988,7 @@
                 const packing = row[2];
                 const brand = row[3];
                 const code = row[4];
+                const PO = row[5];
                 const mc = parseInt(row[6]) || 0;
                 const kg = parseInt(row[7]) || 0;
                 const key = `${packing} - ${brand}`;
@@ -997,6 +998,7 @@
                         codes: new Map(), // Changed to Map to store MC breakdown
                         items: 0, 
                         kg: 0, 
+                        PO:PO,
                         packing: packing, 
                         brand: brand 
                     };
@@ -1070,8 +1072,8 @@
                                     <div class="text-xs text-gray-600">Total Kg</div>
                                 </div>
                                 <div class="text-center">
-                                    <div class="text-xl font-bold text-purple-600">${data.codes.size}</div>
-                                    <div class="text-xs text-gray-600">Kode</div>
+                                    <div class="text-xl font-bold text-purple-600">${data.PO}</div>
+                                    <div class="text-xs text-gray-600">PO</div>
                                 </div>
                             </div>
                             
