@@ -1,4 +1,4 @@
-name: Fetch Google Sheets to JSON
+name: fetch Google Sheets to JSON
 
 on:
   schedule:
