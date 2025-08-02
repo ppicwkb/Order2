@@ -158,73 +158,56 @@
         }
 
         // Data fetching functions
-        async function fetchTargetDate() {
-            try {
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.TARGET_DATE_CELL}?key=${CONFIG.API_KEY}`;
-                const response = await fetch(url);
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.values && data.values[0] && data.values[0][0]) {
-                        targetDate = data.values[0][0];
-                    }
-                }
-            } catch (error) {
-                console.error('Error fetching target date:', error);
-                targetDate = new Date().toISOString().split('T')[0];
-            }
+        async function fetchData() {
+    if (isLoading) return;
+
+    isLoading = true;
+    showLoading();
+
+    try {
+        const response = await fetch('./data.json');
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
-        async function fetchData() {
-            if (isLoading) return;
-            
-            isLoading = true;
-            showLoading();
-            
-            try {
-                // Fetch target date first
-                await fetchTargetDate();
-                
-                // Fetch main data
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}?key=${CONFIG.API_KEY}`;
-                const response = await fetch(url);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-                
-                if (data.values && data.values.length > 1) {
-                    // Process data (skip header row)
-                    stockData = data.values.slice(1).map(row => {
-                        const processedRow = [];
-                        for (let i = 0; i < 9; i++) {
-                            processedRow[i] = row[i] || '-';
-                        }
-                        return processedRow;
-                    });
-                    
-                    filteredData = [...stockData];
-                    updateUI();
-                    setConnectionStatus(true, 'Terhubung');
-                    
-                    console.log(`✅ Data berhasil dimuat: ${stockData.length} baris`);
-                } else {
-                    throw new Error('No data found in sheet');
-                }
-            } catch (error) {
-                console.error('❌ Error fetching data:', error);
-                setConnectionStatus(false, 'Terputus');
-                showError(error.message);
-                
-                // Load sample data as fallback
-                loadSampleData();
-            } finally {
-                isLoading = false;
-                hideLoading();
-            }
+        const data = await response.json();
+
+        // Ambil target date dari kolom J1 (kolom ke-10 = index 9)
+        if (data.values && data.values[0] && data.values[0][9]) {
+            targetDate = data.values[0][9]; 
+        } else {
+            targetDate = new Date().toISOString().split('T')[0]; // fallback jika kosong
         }
+
+        if (data.values && data.values.length > 1) {
+            // Proses data: skip header baris pertama
+            stockData = data.values.slice(1).map(row => {
+                const processedRow = [];
+                for (let i = 0; i < 9; i++) {
+                    processedRow[i] = row[i] || '-';
+                }
+                return processedRow;
+            });
+
+            filteredData = [...stockData];
+            updateUI();
+            setConnectionStatus(true, 'Terhubung');
+
+            console.log(`✅ Data berhasil dimuat: ${stockData.length} baris`);
+        } else {
+            throw new Error('❌ Tidak ada data ditemukan dalam data.json');
+        }
+
+    } catch (error) {
+        console.error('❌ Gagal fetch data:', error);
+        setConnectionStatus(false, 'Terputus');
+        showError(error.message);
+    } finally {
+        isLoading = false;
+        hideLoading();
+    }
+}
 
         function loadSampleData() {
             console.log('📝 Loading sample data...');
