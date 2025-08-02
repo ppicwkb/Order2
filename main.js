@@ -1,11 +1,10 @@
-
-        // Configuration - GANTI DENGAN DATA GOOGLE SHEETS ANDA
+ 
         const CONFIG = {
-            SHEET_ID: '18ga4stLBiKWujBryPQHUHrUzgYjprFJEKvUWSd3Zcks', // Ganti dengan ID Google Sheets Anda
-            SHEET_NAME: 'WKB', // Ganti dengan nama sheet Anda
-            API_KEY: 'AIzaSyBBY9oqeEjjpVnIXOhdkhR6xuTsCr5gYU8', // Ganti dengan API Key Anda
+            SHEET_ID: '18ga4stLBiKWujBryPQHUHrUzgYjprFJEKvUWSd3Zcks', 
+            SHEET_NAME: 'WKB', 
+            API_KEY: 'AIzaSyBBY9oqeEjjpVnIXOhdkhR6xuTsCr5gYU8', 
             ITEMS_PER_PAGE: 10,
-            REFRESH_INTERVAL: 300000, // 5 menit
+            REFRESH_INTERVAL: 400000, 
             TARGET_DATE_CELL: 'J1'
         };
 
@@ -1168,7 +1167,7 @@
                 
                 // Add title
                 doc.setFontSize(16);
-                doc.text('Rekap Kode per Size Packing Brand', 20, 20);
+                doc.text('Breakdown Kode', 20, 20);
                 
                 // Add date and summary
                 doc.setFontSize(10);
@@ -1194,7 +1193,7 @@
                     // Add summary stats
                     doc.setFontSize(9);
                     doc.setFont(undefined, 'normal');
-                    doc.text(`Total MC: ${data.items} | Total Kg: ${data.kg} | PO: ${PO}`, 25, yPosition);
+                    doc.text(`Total MC: ${data.items} | Total Kg: ${data.kg} |PO: ${PO}`, 25, yPosition);
                     yPosition += 10;
                     
                     // Prepare code breakdown data
