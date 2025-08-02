@@ -1193,7 +1193,7 @@
                     // Add summary stats
                     doc.setFontSize(9);
                     doc.setFont(undefined, 'normal');
-                    doc.text(`Total MC: ${data.items} | Total Kg: ${data.kg} |PO: ${PO}`, 25, yPosition);
+                    doc.text(`Total MC: ${data.items} | Total Kg: ${data.kg} | No PO: ${data.PO}`, 25, yPosition);
                     yPosition += 10;
                     
                     // Prepare code breakdown data
