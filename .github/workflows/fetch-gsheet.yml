@@ -1,27 +1,27 @@
 name: Fetch Google Sheets to JSON
 
 on:
+  workflow_dispatch:
   schedule:
-    - cron: '*/10 * * * *' # setiap 10 menit
-  workflow_dispatch: # Bisa dijalankan manual juga
+    - cron: '5 5 * * *' # Setiap hari jam 12:05 WIB (UTC+7)
 
 jobs:
-  fetch-and-save:
+  fetch-sheet:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v3
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: 18
 
-      - name: Install Axios
+      - name: Install axios
         run: npm install axios
 
-      - name: Fetch data from Google Sheets and save to data.json
+      - name: Fetch from Google Sheets
         run: |
           node <<EOF
           const fs = require('fs');
@@ -31,24 +31,23 @@ jobs:
           const SHEET_NAME = 'WKB';
           const RANGE = \`\${SHEET_NAME}!A1:K6000\`;
           const API_KEY = 'AIzaSyBBY9oqeEjjpVnIXOhdkhR6xuTsCr5gYU8';
-
           const url = \`https://sheets.googleapis.com/v4/spreadsheets/\${SHEET_ID}/values/\${RANGE}?key=\${API_KEY}\`;
 
           axios.get(url)
             .then(res => {
               fs.writeFileSync('data.json', JSON.stringify(res.data, null, 2));
-              console.log('✅ Berhasil menyimpan ke data.json');
+              console.log('✅ Sukses: data.json dibuat');
             })
             .catch(err => {
-              console.error('❌ Gagal fetch:', err.message);
+              console.error('❌ Error:', err.message);
               process.exit(1);
             });
           EOF
 
-      - name: Commit and push data.json
+      - name: Commit & push data.json
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add data.json
-          git commit -m "🔄 Update data.json dari Google Sheets"
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add data.json || echo "Tidak ada perubahan"
+          git commit -m "Update data.json" || echo "Tidak ada perubahan untuk commit"
           git push
