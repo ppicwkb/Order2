@@ -1,3 +1,4 @@
+
         // Configuration - GANTI DENGAN DATA GOOGLE SHEETS ANDA
         const CONFIG = {
             SHEET_ID: '18ga4stLBiKWujBryPQHUHrUzgYjprFJEKvUWSd3Zcks', // Ganti dengan ID Google Sheets Anda
