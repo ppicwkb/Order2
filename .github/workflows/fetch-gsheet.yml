@@ -1,16 +1,16 @@
 name: Fetch Google Sheets to JSON
 
 on:
-  workflow_dispatch:
   schedule:
-    - cron: '5 5 * * *' # Setiap hari jam 12:05 WIB (UTC+7)
+    - cron: '5 5 * * *'  # Setiap hari jam 12:05 siang WIB
+  workflow_dispatch:
 
 jobs:
   fetch-sheet:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Setup Node.js
@@ -18,36 +18,39 @@ jobs:
         with:
           node-version: 18
 
+      - name: Create minimal package.json (agar axios bisa install)
+        run: echo '{}' > package.json
+
       - name: Install axios
         run: npm install axios
 
-      - name: Fetch from Google Sheets
+      - name: Fetch Google Sheet and save to data.json
         run: |
-          node <<EOF
+          node <<'EOF'
           const fs = require('fs');
           const axios = require('axios');
 
           const SHEET_ID = '18ga4stLBiKWujBryPQHUHrUzgYjprFJEKvUWSd3Zcks';
           const SHEET_NAME = 'WKB';
-          const RANGE = \`\${SHEET_NAME}!A1:K6000\`;
+          const RANGE = 'A1:K6000';
           const API_KEY = 'AIzaSyBBY9oqeEjjpVnIXOhdkhR6xuTsCr5gYU8';
-          const url = \`https://sheets.googleapis.com/v4/spreadsheets/\${SHEET_ID}/values/\${RANGE}?key=\${API_KEY}\`;
+          const url = \`https://sheets.googleapis.com/v4/spreadsheets/\${SHEET_ID}/values/\${SHEET_NAME}!\${RANGE}?key=\${API_KEY}\`;
 
           axios.get(url)
             .then(res => {
               fs.writeFileSync('data.json', JSON.stringify(res.data, null, 2));
-              console.log('✅ Sukses: data.json dibuat');
+              console.log('✅ data.json berhasil dibuat');
             })
             .catch(err => {
-              console.error('❌ Error:', err.message);
+              console.error('❌ Gagal fetch:', err.message);
               process.exit(1);
             });
           EOF
 
-      - name: Commit & push data.json
+      - name: Commit and push data.json
         run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-          git add data.json || echo "Tidak ada perubahan"
-          git commit -m "Update data.json" || echo "Tidak ada perubahan untuk commit"
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add data.json || echo "No changes"
+          git commit -m "🆕 Update data.json dari Google Sheets" || echo "No commit needed"
           git push
