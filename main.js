@@ -156,14 +156,14 @@
         }
 
         // Data fetching functions
-        async function fetchData() {
+async function fetchData() {
     if (isLoading) return;
 
     isLoading = true;
     showLoading();
 
     try {
-        const response = await fetch('./data.json');
+        const response = await fetch('https://ppicwg.github.io/CS_WKB/data.json');
 
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -173,7 +173,7 @@
 
         // Ambil target date dari kolom J1 (kolom ke-10 = index 9)
         if (data.values && data.values[0] && data.values[0][9]) {
-            targetDate = data.values[0][9]; 
+            targetDate = data.values[0][9];
         } else {
             targetDate = new Date().toISOString().split('T')[0]; // fallback jika kosong
         }
