@@ -1,8 +1,6 @@
  
         const CONFIG = {
-            SHEET_ID: '18ga4stLBiKWujBryPQHUHrUzgYjprFJEKvUWSd3Zcks', 
-            SHEET_NAME: 'WKB', 
-            API_KEY: 'AIzaSyBBY9oqeEjjpVnIXOhdkhR6xuTsCr5gYU8', 
+            
             ITEMS_PER_PAGE: 10,
             REFRESH_INTERVAL: 600000, 
             TARGET_DATE_CELL: 'J1'
