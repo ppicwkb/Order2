@@ -3,102 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Stok WKB - PPIC</title>
+    <title>Dashboard Stock WKB</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        
-        * { box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; }
-        
-        .sidebar { transition: transform 0.3s ease; }
-        .sidebar-item { transition: all 0.2s ease; }
-        .sidebar-item:hover { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .table-row:hover { background-color: #f8fafc; }
-        .loading-spinner { animation: spin 1s linear infinite; }
-        
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        
-        @media (max-width: 768px) {
-            .sidebar { transform: translateX(-100%); }
-            .sidebar.open { transform: translateX(0); }
-            .main-content { margin-left: 0 !important; }
-            .mobile-overlay { 
-                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-                background: rgba(0,0,0,0.5); z-index: 15; display: none;
-            }
-            .mobile-overlay.show { display: block; }
-        }
-    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    
+    <link rel="stylesheet" href="style.css">
+    
 </head>
-<body class="bg-gray-50">
+<body>
     <!-- Login Modal -->
-    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md mx-4">
-            <div class="text-center mb-6">
-                <div class="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                    <i class="fas fa-lock text-blue-600 text-2xl"></i>
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm">
+        <div class="advanced-card p-8 w-full max-w-md mx-4 animate-slideInUp">
+            <div class="text-center mb-8">
+                <div class="mx-auto w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center mb-6 shadow-2xl transform hover:scale-105 transition-transform">
+                    <div class="text-white text-4xl">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-800">🔐 Login Dashboard</h2>
-                <p class="text-gray-600 mt-2">Masukkan kredensial untuk mengakses dashboard stok</p>
+                <h2 class="text-4xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">Dashboard WKB</h2>
+                <p class="text-gray-600 font-medium text-lg">Stock Management</p>
+                <div class="mt-4 flex items-center justify-center space-x-2">
+                    <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span class="text-sm text-gray-500 font-medium">Data by PPIC</span>
+                </div>
             </div>
             
-            <form id="loginForm" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+            <form id="loginForm" class="space-y-6">
+                <div class="space-y-2">
+                    <label class="block text-sm font-bold text-gray-700">Username</label>
                     <div class="relative">
                         <input type="text" id="username" required 
-                               class="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                               placeholder="Masukkan username" autocomplete="username">
-                        <i class="fas fa-user absolute left-3 top-4 text-gray-400"></i>
+                               class="form-advanced w-full pl-12 pr-4 py-4"
+                               placeholder="Enter your username" autocomplete="username">
+                        <i class="fas fa-user absolute left-4 top-5 text-blue-500"></i>
                     </div>
                 </div>
                 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <div class="space-y-2">
+                    <label class="block text-sm font-bold text-gray-700">Password</label>
                     <div class="relative">
                         <input type="password" id="password" required 
-                               class="w-full px-4 py-3 pl-10 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                               placeholder="Masukkan password" autocomplete="current-password">
-                        <i class="fas fa-lock absolute left-3 top-4 text-gray-400"></i>
-                        <button type="button" onclick="togglePassword()" class="absolute right-3 top-4 text-gray-400 hover:text-gray-600">
+                               class="form-advanced w-full pl-12 pr-12 py-4"
+                               placeholder="Enter your password" autocomplete="current-password">
+                        <i class="fas fa-lock absolute left-4 top-5 text-blue-500"></i>
+                        <button type="button" onclick="togglePassword()" class="absolute right-4 top-5 text-gray-400 hover:text-blue-500 transition-colors">
                             <i id="passwordToggle" class="fas fa-eye"></i>
                         </button>
                     </div>
                 </div>
                 
-                <div id="loginError" class="hidden bg-red-50 border border-red-200 rounded-lg p-3">
+                <div id="loginError" class="hidden bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
                     <div class="flex items-center">
-                        <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
-                        <span class="text-red-700 text-sm">Username atau password salah!</span>
+                        <i class="fas fa-exclamation-triangle text-red-500 mr-3"></i>
+                        <span class="text-red-700 font-medium">Invalid credentials! Please try again.</span>
                     </div>
                 </div>
                 
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center">
-                    <span id="loginButtonText">
-                        <i class="fas fa-sign-in-alt mr-2"></i>Masuk Dashboard
+                <button type="submit" class="btn-advanced w-full py-4 text-lg font-bold shadow-xl">
+                    <span id="loginButtonText" class="flex items-center justify-center">
+                        <i class="fas fa-sign-in-alt mr-3"></i>Access Dashboard
                     </span>
-                    <div id="loginSpinner" class="hidden">
-                        <div class="loading-spinner w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
-                        Memverifikasi...
+                    <div id="loginSpinner" class="hidden flex items-center justify-center">
+                        <div class="loading-spin w-6 h-6 border-2 border-white border-t-transparent rounded-full mr-3"></div>
+                        Authenticating...
                     </div>
                 </button>
             </form>
             
-            <div class="mt-6 pt-6 border-t border-gray-200">
-                <div class="bg-blue-50 rounded-lg p-4">
-                    <h4 class="text-sm font-medium text-blue-800 mb-2">🔐 Akses Dashboard Stok:</h4>
-                    <div class="text-xs text-blue-600 space-y-1">
-                        <div>• Login sesuai Kebutuhan :</div>
-                        <div><strong>PPIC CS PRODUKSI QC</strong></div>
-                        <div>• Gunakan username dan password yang tersedia.</div>
+            <div class="mt-8 pt-6 border-t border-gray-200">
+                <div class="advanced-card p-6">
+                    <h4 class="text-sm font-bold text-gray-700 mb-4 flex items-center">
+                        <i class="fas fa-key text-blue-500 mr-2"></i>Login Sesuai Kebutuhan :
+                    </h4>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl">
+                           
+                            
+                            <span class="font-mono text-blue-600 font-bold">PPIC QC CS QA PRODUKSI</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl">
+                            <span class="font-semibold text-gray-700">Login dengan user yang disediakan</span>
+                           
+                            
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
+                            <span class="font-semibold text-gray-700">Setiap user memiliki akses dan fitur berbeda </span>
+                            
+                        </div>
                     </div>
                 </div>
             </div>
@@ -106,475 +102,536 @@
     </div>
 
     <!-- Mobile Header -->
-    <div class="md:hidden bg-white shadow-md px-4 py-3 flex items-center justify-between">
-        <button onclick="toggleSidebar()" class="text-gray-600 hover:text-gray-800">
+    <div class="md:hidden glass-morphism shadow-xl px-6 py-4 flex items-center justify-between relative z-40">
+        <button onclick="UI.toggleSidebar()" class="text-blue-600 hover:text-purple-600 transition-colors p-2 rounded-lg hover:bg-blue-50">
             <i class="fas fa-bars text-xl"></i>
         </button>
-        <h1 class="text-lg font-bold text-gray-800">📊 Dashboard Stok WKB</h1>
-        <div class="w-6"></div>
+        <div class="flex items-center">
+            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                <i class="fas fa-chart-line text-white text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Dashboard WKB</h1>
+                <p class="text-xs text-gray-500 font-medium">Stock Management</p>
+                              </div>
+        </div>
+        <div class="w-10"></div>
     </div>
 
     <!-- Mobile Overlay -->
-    <div class="mobile-overlay" onclick="closeSidebar()"></div>
+    <div class="mobile-overlay fixed inset-0 bg-black bg-opacity-50 z-30 hidden backdrop-blur-sm" onclick="UI.closeSidebar()"></div>
 
-    <!-- Sidebar -->
-    <div class="sidebar fixed left-0 top-0 h-full w-64 bg-white shadow-lg z-20">
+    <!-- Advanced Sidebar -->
+    <div class="advanced-sidebar fixed left-0 top-0 h-full w-80 z-40">
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
-                <h1 class="text-xl font-bold text-gray-800">📊 Dashboard WKB</h1>
-                <button onclick="closeSidebar()" class="md:hidden text-gray-600 hover:text-gray-800">
+                <div class="flex items-center">
+                    <div class="w-14 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mr-4 shadow-xl">
+                        <i class="fas fa-chart-line text-white text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-1xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Dashboard wkb</h1>
+                       
+                    </div>
+                </div>
+                <button onclick="UI.closeSidebar()" class="md:hidden text-gray-600 hover:text-purple-600 transition-colors p-2 rounded-lg hover:bg-gray-100">
                     <i class="fas fa-times text-lg"></i>
                 </button>
             </div>
         </div>
         
         <!-- User Info -->
-        <div id="userInfo" class="px-4 py-3 border-b border-gray-200 hidden">
+        <div id="userInfo" class="px-6 py-6 border-b border-gray-200 hidden">
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
-                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                        <i class="fas fa-user text-blue-600 text-sm"></i>
+                    <div class="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center mr-4 shadow-lg">
+                        <i class="fas fa-user text-white"></i>
                     </div>
                     <div>
-                        <div class="text-sm font-medium text-gray-800" id="userName">-</div>
-                        <div class="text-xs text-gray-500 capitalize" id="userRole">-</div>
+                        <div class="text-sm font-bold text-gray-800" id="userName">-</div>
+                        <div class="text-xs text-gray-500 capitalize font-semibold" id="userRole">-</div>
                     </div>
                 </div>
-                <button onclick="logout()" class="text-gray-400 hover:text-red-500 transition-colors" title="Logout">
+                <button onclick="Auth.logout()" class="text-gray-400 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50" title="Logout">
                     <i class="fas fa-sign-out-alt"></i>
                 </button>
             </div>
         </div>
         
-        <nav class="mt-6 px-4 space-y-2">
-            <a href="#" class="sidebar-item flex items-center px-4 py-3 text-white rounded-lg bg-gradient-to-r from-blue-500 to-purple-600" onclick="showSection('dashboard')">
-                <i class="fas fa-chart-line mr-3"></i>Dashboard WKB
+        <nav class="mt-8 px-6 space-y-4">
+            <a href="#" class="sidebar-item active flex items-center px-6 py-4 text-blue rounded-2xl font-bold shadow-lg" onclick="Navigation.showSection('dashboard')">
+                <div class="w-8 h-8 mr-4 flex items-center justify-center">
+                    <i class="fas fa-tachometer-alt text-xl"></i>
+                </div>
+                <div>
+                    <div class="text-sm">Main Dashboard</div>
+                    <div class="text-xs opacity-75">Stock Overview</div>
+                </div>
             </a>
-            <a href="#" class="sidebar-item flex items-center px-4 py-3 text-gray-700 rounded-lg" onclick="showSection('rekap-po')">
-                <i class="fas fa-folder mr-3"></i>Rekap per PO
+            
+            <a href="#" class="sidebar-item flex items-center px-6 py-4 text-gray-700 rounded-2xl font-bold hover:text-white" onclick="Navigation.showSection('analytics')">
+                <div class="w-8 h-8 mr-4 flex items-center justify-center">
+                    <i class="fas fa-chart-bar text-xl"></i>
+                </div>
+                <div>
+                    <div class="text-sm">Analytics</div>
+                    <div class="text-xs opacity-75">Advanced Reports</div>
+                </div>
             </a>
-            <a href="#" class="sidebar-item flex items-center px-4 py-3 text-gray-700 rounded-lg" onclick="showSection('rekap-brand')">
-                <i class="fas fa-tags mr-3"></i>Rekap per Brand
+            
+            <a href="#" class="sidebar-item flex items-center px-6 py-4 text-gray-700 rounded-2xl font-bold hover:text-white" onclick="Navigation.showSection('rekap-po')">
+                <div class="w-8 h-8 mr-4 flex items-center justify-center">
+                    <i class="fas fa-file-invoice text-xl"></i>
+                </div>
+                <div>
+                    <div class="text-sm">PO Summary</div>
+                    <div class="text-xs opacity-75">Purchase Orders</div>
+                </div>
             </a>
-            <a href="#" class="sidebar-item flex items-center px-4 py-3 text-gray-700 rounded-lg" onclick="showSection('rekap-lokasi')">
-                <i class="fas fa-map-marker-alt mr-3"></i>Rekap per Lokasi
+            
+            <a href="#" class="sidebar-item flex items-center px-6 py-4 text-gray-700 rounded-2xl font-bold hover:text-white" onclick="Navigation.showSection('rekap-brand')">
+                <div class="w-8 h-8 mr-4 flex items-center justify-center">
+                    <i class="fas fa-tags text-xl"></i>
+                </div>
+                <div>
+                    <div class="text-sm">Brand Analysis</div>
+                    <div class="text-xs opacity-75">Brand Performance</div>
+                </div>
             </a>
-            <a href="#" class="sidebar-item flex items-center px-4 py-3 text-gray-700 rounded-lg" onclick="showSection('rekap-kode')">
-                <i class="fas fa-barcode mr-3"></i>Rekap per Kode
+            
+            <a href="#" class="sidebar-item flex items-center px-6 py-4 text-gray-700 rounded-2xl font-bold hover:text-white" onclick="Navigation.showSection('rekap-lokasi')">
+                <div class="w-8 h-8 mr-4 flex items-center justify-center">
+                    <i class="fas fa-map-marker-alt text-xl"></i>
+                </div>
+                <div>
+                    <div class="text-sm">Location Tracking</div>
+                    <div class="text-xs opacity-75">Cold Storage Data</div>
+                </div>
             </a>
-            <a href="#" class="sidebar-item flex items-center px-4 py-3 text-gray-700 rounded-lg" onclick="showSection('kode-per-size-brand')">
-                <i class="fas fa-layer-group mr-3"></i>Breakdown
+            
+            <a href="#" class="sidebar-item flex items-center px-6 py-4 text-gray-700 rounded-2xl font-bold hover:text-white" onclick="Navigation.showSection('code-breakdown')">
+                <div class="w-8 h-8 mr-4 flex items-center justify-center">
+                    <i class="fas fa-code text-xl"></i>
+                </div>
+                <div>
+                    <div class="text-sm">Code Breakdown</div>
+                    <div class="text-xs opacity-75">Product Codes</div>
+                </div>
             </a>
-            <a href="#" class="sidebar-item flex items-center px-4 py-3 text-gray-700 rounded-lg" onclick="showSection('stok-hari-ini')">
-                <i class="fas fa-calendar-day mr-3"></i>Stok Masuk Tanggal
+            
+            <a href="#" class="sidebar-item flex items-center px-6 py-4 text-gray-700 rounded-2xl font-bold hover:text-white" onclick="Navigation.showSection('data-entry-summary')">
+                <div class="w-8 h-8 mr-4 flex items-center justify-center">
+                    <i class="fas fa-calendar-alt text-xl"></i>
+                </div>
+                <div>
+                    <div class="text-sm">Data Entry Summary</div>
+                    <div class="text-xs opacity-75">Daily Breakdown</div>
+                </div>
             </a>
-            <a href="#" class="sidebar-item flex items-center px-4 py-3 text-gray-700 rounded-lg" onclick="showSection('grafik')">
-                <i class="fas fa-chart-bar mr-3"></i>Grafik Ringkas
-            </a>
+            
+          
         </nav>
         
-        <div class="absolute bottom-4 left-4 right-4">
-            <div class="bg-blue-50 p-4 rounded-lg">
-                <p class="text-sm text-blue-600">📡 Data dari PPIC</p>
-                <p class="text-xs text-blue-500 mt-1">WKB - Auto refresh</p>
-                <div class="flex items-center mt-2">
-                    <div id="connectionStatus" class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                    <span class="text-xs text-gray-500" id="connectionText">Terhubung</span>
-                </div>
-            </div>
-        </div>
+
     </div>
 
     <!-- Main Content -->
-    <div class="main-content ml-64 p-4 md:p-6 pt-20 md:pt-6">
+    <div class="main-content ml-80 p-8 min-h-screen">
         <!-- Dashboard Section -->
-        <div id="dashboard-section" class="section">
-            <div class="mb-6">
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Dashboard Stok WKB</h2>
-                <p class="text-gray-600">PPIC Team</p>
-            </div>
-
-            <!-- Quick Stats -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-white p-4 rounded-lg shadow">
-                    <div class="text-2xl font-bold text-blue-600" id="totalItems">-</div>
-                    <div class="text-sm text-gray-600">Total MC</div>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow">
-                    <div class="text-2xl font-bold text-green-600" id="totalKg">-</div>
-                    <div class="text-sm text-gray-600">Total Kg</div>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow">
-                    <div class="text-2xl font-bold text-purple-600" id="uniqueProducts">-</div>
-                    <div class="text-sm text-gray-600">Produk</div>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow">
-                    <div class="text-2xl font-bold text-orange-600" id="uniqueBrands">-</div>
-                    <div class="text-sm text-gray-600">Brand</div>
+        <div id="dashboard-section" class="section animate-fadeIn">
+            <!-- Header -->
+            <div class="mb-10">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-5xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">Dashboard WKB</h2>
+                        <p class="text-gray-600 text-xl font-semibold">Stock Management & Analytics</p>
+                    </div>
                 </div>
             </div>
 
-            <!-- Filters -->
-            <div class="bg-white p-4 rounded-lg shadow mb-6">
-                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai</label>
-                        <input type="date" id="startDate" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Akhir</label>
-                        <input type="date" id="endDate" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Produk</label>
-                        <select id="productFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="">Semua Produk</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Brand</label>
-                        <select id="brandFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="">Semua Brand</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">PO</label>
-                        <select id="POFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="">Semua PO</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Cari Produk/Brand</label>
-                        <div class="relative">
-                            <input type="text" id="searchProduct" placeholder="Ketik nama produk atau brand..." class="w-full px-3 py-2 pl-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+
+
+            <!-- Advanced Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
+                <div class="stat-card animate-slideInUp" style="animation-delay: 0.1s">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-4xl font-black text-blue-600 mb-2" id="totalItems">-</div>
+                            <div class="text-sm text-gray-600 font-bold uppercase tracking-wide">Total MC</div>
+                        </div>
+                        <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-boxes text-white text-2xl"></i>
                         </div>
                     </div>
+                    <div class="flex items-center">
+                        <div class="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                        <span class="text-xs text-gray-500 font-semibold">Master Cartons</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card animate-slideInUp" style="animation-delay: 0.2s">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-4xl font-black text-green-600 mb-2" id="totalKg">-</div>
+                            <div class="text-sm text-gray-600 font-bold uppercase tracking-wide">Total Weight</div>
+                        </div>
+                        <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-weight text-white text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                        <span class="text-xs text-gray-500 font-semibold">Kilograms</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card animate-slideInUp" style="animation-delay: 0.3s">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-4xl font-black text-purple-600 mb-2" id="uniqueProducts">-</div>
+                            <div class="text-sm text-gray-600 font-bold uppercase tracking-wide">Products</div>
+                        </div>
+                        <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-cube text-white text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
+                        <span class="text-xs text-gray-500 font-semibold">Unique Items</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card animate-slideInUp" style="animation-delay: 0.4s">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-4xl font-black text-orange-600 mb-2" id="uniqueBrands">-</div>
+                            <div class="text-sm text-gray-600 font-bold uppercase tracking-wide">Brands</div>
+                        </div>
+                        <div class="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-tags text-white text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
+                        <span class="text-xs text-gray-500 font-semibold">Brand Count</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Filters -->
+            <div class="advanced-card p-8 mb-10 animate-slideInUp" style="animation-delay: 0.5s">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-2xl font-black text-gray-800">Filters</h3>
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-2">
+                          
+                                   </div>
+                                   
+          <div class="flex items-center space-x-2">
+                            <div id="connectionStatus" class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                            <span id="connectionText" class="text-sm font-semibold text-gray-600">ppic</span>
+                        </div>
+                        <div id="lastUpdateTime" class="text-xs text-gray-500 font-medium">
+                            Entry Date: Loading...
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Lokasi</label>
-                        <select id="locationFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="">Semua Lokasi</option>
+                        <label class="block text-sm font-bold text-gray-700 mb-3">Start Date</label>
+                        <input type="date" id="startDate" class="form-advanced w-full">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-3">End Date</label>
+                        <input type="date" id="endDate" class="form-advanced w-full">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-3">Brand Selection</label>
+                        <select id="brandFilter" class="form-advanced w-full">
+                            <option value="">All Brands</option>
                         </select>
                     </div>
                 </div>
                 
-                <div class="flex flex-wrap gap-2">
-                    <button onclick="applyFilters()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
-                        <i class="fas fa-filter mr-2"></i>Filter
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="search-container">
+                        <label class="block text-sm font-bold text-gray-700 mb-3">Smart Search</label>
+                        <div class="relative">
+                            <input type="text" id="searchProduct" placeholder="Search products, brands, packaging, or PO numbers..." 
+                                   class="form-advanced w-full pl-12 pr-4" onkeyup="SmartSearch.performSearch()">
+                            <i class="fas fa-search absolute left-4 top-4 text-blue-500"></i>
+                        </div>
+                        <div id="searchResults" class="search-results"></div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-3">Location Filter</label>
+                        <select id="locationFilter" class="form-advanced w-full">
+                            <option value="">All Locations</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-3">Sort By</label>
+                        <select id="sortBy" class="form-advanced w-full" onchange="SmartSearch.applySorting()">
+                            <option value="date-desc">Date (Newest First)</option>
+                            <option value="date-asc">Date (Oldest First)</option>
+                            <option value="product-asc">Product Name (A-Z)</option>
+                            <option value="product-desc">Product Name (Z-A)</option>
+                            <option value="brand-asc">Brand (A-Z)</option>
+                            <option value="brand-desc">Brand (Z-A)</option>
+                            <option value="mc-desc">MC Quantity (High to Low)</option>
+                            <option value="mc-asc">MC Quantity (Low to High)</option>
+                            <option value="kg-desc">Weight (Heavy to Light)</option>
+                            <option value="kg-asc">Weight (Light to Heavy)</option>
+                            <option value="po-asc">PO Number (A-Z)</option>
+                            <option value="po-desc">PO Number (Z-A)</option>
+                        </select>
+                    </div>
+
+                </div>
+                
+                <div class="flex flex-wrap gap-4">
+                    <button onclick="Filters.apply()" class="btn-advanced px-8 py-3 shadow-xl">
+                        <i class="fas fa-filter mr-2"></i>Apply Filters
                     </button>
-                    <button onclick="resetFilters()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
-                        <i class="fas fa-undo mr-2"></i>Reset
+                    <button onclick="Filters.reset()" class="bg-gray-500 hover:bg-gray-600 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-xl hover:shadow-2xl">
+                        <i class="fas fa-undo mr-2"></i>Reset All
                     </button>
-                    <button onclick="refreshData()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors">
-                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    <button onclick="DataLoader.loadFromGoogleSheets()" class="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-xl hover:shadow-2xl" id="refreshBtn">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh Data
                     </button>
-                    <button onclick="exportToPDF()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
+                    <button onclick="Export.toPDF()" class="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-xl hover:shadow-2xl">
                         <i class="fas fa-file-pdf mr-2"></i>Export PDF
                     </button>
                 </div>
             </div>
 
-            <!-- Data Table -->
-            <div class="bg-white rounded-lg shadow overflow-hidden">
-                <div class="overflow-x-auto">
+
+
+            <!-- Advanced Data Table -->
+            <div class="advanced-table animate-slideInUp" style="animation-delay: 0.7s">
+                <div class="table-header px-4 md:px-8 py-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg md:text-xl font-black">Stock Data</h3>
+                        <div class="flex items-center space-x-4">
+                            <span class="text-xs md:text-sm font-semibold opacity-90">Real-time Data</span>
+                            <div class="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Desktop Table -->
+                <div class="desktop-table overflow-x-auto">
                     <table class="w-full">
-                        <thead class="bg-gray-50">
+                        <thead class="bg-gradient-to-r from-gray-50 to-blue-50">
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="sortTable(0)">
-                                    Tanggal <i class="fas fa-sort ml-1"></i>
+                                <th class="px-8 py-6 text-left text-xs font-black text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors" onclick="Table.sort(0)">
+                                    Date <i class="fas fa-sort ml-2 text-blue-500"></i>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="sortTable(1)">
-                                    Produk <i class="fas fa-sort ml-1"></i>
+                                <th class="px-8 py-6 text-left text-xs font-black text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors" onclick="Table.sort(1)">
+                                    Product <i class="fas fa-sort ml-2 text-blue-500"></i>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="sortTable(2)">
-                                    Packing <i class="fas fa-sort ml-1"></i>
+                                <th class="px-8 py-6 text-left text-xs font-black text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors" onclick="Table.sort(2)">
+                                    Packaging <i class="fas fa-sort ml-2 text-blue-500"></i>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="sortTable(3)">
-                                    Brand <i class="fas fa-sort ml-1"></i>
+                                <th class="px-8 py-6 text-left text-xs font-black text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors" onclick="Table.sort(3)">
+                                    Brand <i class="fas fa-sort ml-2 text-blue-500"></i>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="sortTable(4)">
-                                    Kode <i class="fas fa-sort ml-1"></i>
+                                <th class="px-8 py-6 text-left text-xs font-black text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors" onclick="Table.sort(4)">
+                                    Code <i class="fas fa-sort ml-2 text-blue-500"></i>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="sortTable(5)">
-                                    No. PO <i class="fas fa-sort ml-1"></i>
+                                <th class="px-8 py-6 text-left text-xs font-black text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors" onclick="Table.sort(5)">
+                                    PO Number <i class="fas fa-sort ml-2 text-blue-500"></i>
                                 </th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="sortTable(6)">
-                                    Jumlah mc <i class="fas fa-sort ml-1"></i>
+                                <th class="px-8 py-6 text-right text-xs font-black text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors" onclick="Table.sort(6)">
+                                    MC Qty <i class="fas fa-sort ml-2 text-blue-500"></i>
                                 </th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="sortTable(7)">
-                                    Jumlah Kg <i class="fas fa-sort ml-1"></i>
+                                <th class="px-8 py-6 text-right text-xs font-black text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors" onclick="Table.sort(7)">
+                                    Weight (Kg) <i class="fas fa-sort ml-2 text-blue-500"></i>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="sortTable(8)">
-                                    Lokasi <i class="fas fa-sort ml-1"></i>
+                                <th class="px-8 py-6 text-left text-xs font-black text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors" onclick="Table.sort(8)">
+                                    Location <i class="fas fa-sort ml-2 text-blue-500"></i>
                                 </th>
                             </tr>
                         </thead>
-                        <tbody id="stockTableBody" class="divide-y divide-gray-200">
+                        <tbody id="stockTableBody" class="divide-y divide-gray-100">
                             <!-- Data populated by JavaScript -->
                         </tbody>
                     </table>
                 </div>
                 
-                <!-- Pagination -->
-                <div class="bg-gray-50 px-4 py-3 flex items-center justify-between border-t">
-                    <div class="text-sm text-gray-700">
-                        Menampilkan <span id="showingStart">0</span> - <span id="showingEnd">0</span> dari <span id="totalRecords">0</span>
+                <!-- Mobile Table -->
+                <div class="mobile-table p-4" id="mobileStockTable">
+                    <!-- Mobile cards populated by JavaScript -->
+                </div>
+                
+                <!-- Advanced Pagination -->
+                <div class="bg-gradient-to-r from-gray-50 to-blue-50 px-4 md:px-8 py-6 border-t border-gray-200">
+                    <!-- Mobile Pagination -->
+                    <div class="md:hidden">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="text-xs text-gray-700 font-bold">
+                                <span id="showingStartMobile" class="font-black text-blue-600">0</span> - <span id="showingEndMobile" class="font-black text-blue-600">0</span> of <span id="totalRecordsMobile" class="font-black text-blue-600">0</span>
+                            </div>
+                            <select id="itemsPerPageMobile" onchange="Table.changeItemsPerPage()" class="form-advanced text-xs py-1 px-2">
+                                <option value="5">5</option>
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center justify-center space-x-2">
+                            <button onclick="Table.firstPage()" class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 transition-colors shadow-sm font-bold text-sm" id="firstBtnMobile">
+                                <i class="fas fa-angle-double-left text-blue-600"></i>
+                            </button>
+                            <button onclick="Table.previousPage()" class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 transition-colors shadow-sm font-bold text-sm" id="prevBtnMobile">
+                                <i class="fas fa-angle-left text-blue-600"></i>
+                            </button>
+                            <span id="pageInfoMobile" class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-black shadow-lg text-sm">1</span>
+                            <button onclick="Table.nextPage()" class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 transition-colors shadow-sm font-bold text-sm" id="nextBtnMobile">
+                                <i class="fas fa-angle-right text-blue-600"></i>
+                            </button>
+                            <button onclick="Table.lastPage()" class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 transition-colors shadow-sm font-bold text-sm" id="lastBtnMobile">
+                                <i class="fas fa-angle-double-right text-blue-600"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="flex space-x-1">
-                        <button onclick="previousPage()" class="px-3 py-1 bg-white border rounded hover:bg-gray-50" id="prevBtn">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                        <span id="pageInfo" class="px-3 py-1 bg-blue-600 text-white rounded">1</span>
-                        <button onclick="nextPage()" class="px-3 py-1 bg-white border rounded hover:bg-gray-50" id="nextBtn">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
+                    
+                    <!-- Desktop Pagination -->
+                    <div class="hidden md:flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="text-sm text-gray-700 font-bold">
+                                Showing <span id="showingStart" class="font-black text-blue-600">0</span> - <span id="showingEnd" class="font-black text-blue-600">0</span> of <span id="totalRecords" class="font-black text-blue-600">0</span>
+                            </div>
+                            <select id="itemsPerPage" onchange="Table.changeItemsPerPage()" class="form-advanced text-sm py-2 px-3">
+                                <option value="10">10 per page</option>
+                                <option value="25">25 per page</option>
+                                <option value="50">50 per page</option>
+                                <option value="100">100 per page</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <button onclick="Table.firstPage()" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 transition-colors shadow-sm font-bold" id="firstBtn">
+                                <i class="fas fa-angle-double-left text-blue-600"></i>
+                            </button>
+                            <button onclick="Table.previousPage()" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 transition-colors shadow-sm font-bold" id="prevBtn">
+                                <i class="fas fa-angle-left text-blue-600"></i>
+                            </button>
+                            <span id="pageInfo" class="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-black shadow-lg">1</span>
+                            <button onclick="Table.nextPage()" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 transition-colors shadow-sm font-bold" id="nextBtn">
+                                <i class="fas fa-angle-right text-blue-600"></i>
+                            </button>
+                            <button onclick="Table.lastPage()" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-blue-50 transition-colors shadow-sm font-bold" id="lastBtn">
+                                <i class="fas fa-angle-double-right text-blue-600"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Rekap per PO Section -->
+        <!-- Analytics Section -->
+        <div id="analytics-section" class="section hidden">
+            <div class="mb-10">
+                <h2 class="text-5xl font-black bg-gradient-to-r from-green-600 to-green-600 bg-clip-text text-transparent mb-3">Advanced Analytics</h2>
+                <p class="text-gray-600 text-xl font-semibold">Data Visualization & Insights</p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+                <div class="advanced-card p-8">
+                    <h3 class="text-xl font-black text-gray-800 mb-6">Brand Distribution</h3>
+                    <div class="h-80">
+                        <canvas id="brandChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="advanced-card p-8">
+                    <h3 class="text-xl font-black text-gray-800 mb-6">Stock Trend</h3>
+                    <div class="h-80">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PO Summary Section -->
         <div id="rekap-po-section" class="section hidden">
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h2 class="text-2xl font-bold text-gray-800">📁 Rekap per PO</h2>
-                    <p class="text-gray-600 mt-1">Total <span id="totalPOCount" class="font-semibold text-blue-600">0</span> PO ditemukan</p>
-                </div>
-                <div class="text-right">
-                    <div class="text-sm text-gray-500">Menampilkan</div>
-                    <div class="text-lg font-bold text-green-600" id="displayedPOCount">0</div>
-                    <div class="text-sm text-gray-500">PO teratas</div>
-                </div>
+            <div class="mb-10">
+                <h2 class="text-5xl font-black bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent mb-3">📁 PO Summary</h2>
+                <p class="text-gray-600 text-xl font-semibold">Purchase Order Analysis</p>
             </div>
             
-            <!-- PO Statistics -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-white p-4 rounded-lg shadow text-center">
-                    <div class="text-2xl font-bold text-blue-600" id="totalPOItems">0</div>
-                    <div class="text-sm text-gray-600">Total MC</div>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow text-center">
-                    <div class="text-2xl font-bold text-green-600" id="totalPOKg">0</div>
-                    <div class="text-sm text-gray-600">Total Kg</div>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow text-center">
-                    <div class="text-2xl font-bold text-purple-600" id="avgItemsPerPO">0</div>
-                    <div class="text-sm text-gray-600">Rata-rata MC/PO</div>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow text-center">
-                    <input type="text" id="POSearchInput" placeholder="Cari PO..." class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" onkeyup="filterPOSummary()">
-                    <div class="text-xs text-gray-600 mt-1">Cari</div>
-                </div>
-            </div>
-
-            <!-- Show All POs Button -->
-            <div class="mb-4">
-                <button id="showAllPOsBtn" onclick="toggleShowAllPOs()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
-                    <i class="fas fa-eye mr-2"></i>Tampilkan Semua PO
-                </button>
-                <span class="ml-3 text-sm text-gray-500" id="PODisplayInfo">Menampilkan 6 PO teratas</span>
-            </div>
-            
-            <div id="POSummary" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- PO cards will be populated by JavaScript -->
-            </div>
-        </div>
-
-        <!-- Rekap per Brand Section -->
-        <div id="rekap-brand-section" class="section hidden">
-            <div class="mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">🏷️ Rekap per Brand</h2>
-                <p class="text-gray-600">Ringkasan stok berdasarkan brand produk</p>
-            </div>
-            
-            <!-- Brand Statistics -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-white p-4 rounded-lg shadow text-center">
-                    <div class="text-2xl font-bold text-blue-600" id="totalBrandItems">0</div>
-                    <div class="text-sm text-gray-600">Total MC</div>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow text-center">
-                    <div class="text-2xl font-bold text-green-600" id="totalBrandKg">0</div>
-                    <div class="text-sm text-gray-600">Total Kg</div>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow text-center">
-                    <div class="text-2xl font-bold text-purple-600" id="totalBrandCount">0</div>
-                    <div class="text-sm text-gray-600">Total Brand</div>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow text-center">
-                    <div class="text-2xl font-bold text-orange-600" id="avgKgPerBrand">0</div>
-                    <div class="text-sm text-gray-600">Rata-rata Kg/Brand</div>
-                </div>
-            </div>
-            
-            <div id="brandSummary" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Brand cards will be populated by JavaScript -->
-            </div>
-        </div>
-
-        <!-- Rekap per Lokasi Section -->
-        <div id="rekap-lokasi-section" class="section hidden">
-            <div class="mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">📍 Rekap per Lokasi</h2>
-                <p class="text-gray-600">Ringkasan stok berdasarkan lokasi penyimpanan</p>
-            </div>
-            
-            <!-- Location Statistics -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-white p-4 rounded-lg shadow text-center">
-                    <div class="text-2xl font-bold text-blue-600" id="totalLocationItems">0</div>
-                    <div class="text-sm text-gray-600">Total MC</div>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow text-center">
-                    <div class="text-2xl font-bold text-green-600" id="totalLocationKg">0</div>
-                    <div class="text-sm text-gray-600">Total Kg</div>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow text-center">
-                    <div class="text-2xl font-bold text-purple-600" id="totalLocationCount">0</div>
-                    <div class="text-sm text-gray-600">Total Lokasi</div>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow text-center">
-                    <div class="text-2xl font-bold text-orange-600" id="avgKgPerLocation">0</div>
-                    <div class="text-sm text-gray-600">Rata-rata Kg/Lokasi</div>
-                </div>
-            </div>
-            
-            <div id="locationSummary" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Location cards will be populated by JavaScript -->
-            </div>
-        </div>
-
-        <!-- Rekap per Kode Section -->
-        <div id="rekap-kode-section" class="section hidden">
-            <div class="mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">🏷️ Rekap per Kode</h2>
-                <p class="text-gray-600">Ringkasan stok berdasarkan kode produk</p>
-            </div>
-            
-            <!-- Code Statistics -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-white p-4 rounded-lg shadow text-center">
-                    <div class="text-2xl font-bold text-blue-600" id="totalCodeItems">0</div>
-                    <div class="text-sm text-gray-600">Total MC</div>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow text-center">
-                    <div class="text-2xl font-bold text-green-600" id="totalCodeKg">0</div>
-                    <div class="text-sm text-gray-600">Total Kg</div>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow text-center">
-                    <div class="text-2xl font-bold text-purple-600" id="totalCodeCount">0</div>
-                    <div class="text-sm text-gray-600">Total Kode</div>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow text-center">
-                    <input type="text" id="codeSearchInput" placeholder="Cari kode..." class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" onkeyup="filterCodeSummary()">
-                    <div class="text-xs text-gray-600 mt-1">Kolom Cari</div>
-                </div>
-            </div>
-            
-            <div id="codeSummary" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Code cards will be populated by JavaScript -->
-            </div>
-        </div>
-
-        <!-- Kode per Size Packing Brand Section -->
-        <div id="kode-per-size-brand-section" class="section hidden">
-            <div class="mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">📦 Breakdown</h2>
-                <p class="text-gray-600">Breakdown Kode</p>
-            </div>
-            
-            <!-- Size Packing Brand Statistics -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-white p-4 rounded-lg shadow text-center">
-                    <div class="text-2xl font-bold text-blue-600" id="totalSizePackingItems">0</div>
-                    <div class="text-sm text-gray-600">Total MC</div>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow text-center">
-                    <div class="text-2xl font-bold text-green-600" id="totalSizePackingKg">0</div>
-                    <div class="text-sm text-gray-600">Total Kg</div>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow text-center">
-                    <div class="text-2xl font-bold text-purple-600" id="totalSizePackingCount">0</div>
-                    <div class="text-sm text-gray-600">Total Kombinasi</div>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow text-center">
-                    <input type="text" id="sizePackingSearchInput" placeholder="Cari packing/brand..." class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" onkeyup="filterSizePackingSummary()">
-                    <div class="text-xs text-gray-600 mt-1">Cari</div>
-                </div>
-            </div>
-
-            <!-- Export Button -->
-            <div class="mb-4">
-                <button onclick="exportSizePackingToPDF()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
-                    <i class="fas fa-file-pdf mr-2"></i>Export PDF
-                </button>
-                <span class="ml-3 text-sm text-gray-500" id="sizePackingDisplayInfo">Menampilkan semua data</span>
-            </div>
-            
-            <div id="sizePackingBrandSummary" class="space-y-6">
-                <!-- Size packing brand data will be populated by JavaScript -->
-            </div>
-        </div>
-
-        <!-- Stok Tanggal Target Section -->
-        <div id="stok-hari-ini-section" class="section hidden">
-            <div class="mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">📦 Stok Masuk Tanggal</h2>
-                <p class="text-gray-600">Data stok untuk tanggal</p>
-            </div>
-            
-            <div class="bg-white p-6 rounded-lg shadow mb-6">
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
-                    <div class="text-center">
-                        <div class="text-3xl font-bold text-blue-600" id="todayItems">0</div>
-                        <div class="text-sm text-gray-600">Total MC</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-3xl font-bold text-green-600" id="todayKg">0</div>
-                        <div class="text-sm text-gray-600">Total Kg</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-3xl font-bold text-purple-600" id="todayProducts">0</div>
-                        <div class="text-sm text-gray-600">Produk Berbeda</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-3xl font-bold text-orange-600" id="todayBrands">0</div>
-                        <div class="text-sm text-gray-600">Brand</div>
+            <!-- PO Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
+                <div class="stat-card animate-slideInUp">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-4xl font-black text-blue-600 mb-2" id="totalPOs">-</div>
+                            <div class="text-sm text-gray-600 font-bold uppercase tracking-wide">Total PO</div>
+                        </div>
+                        <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-file-invoice text-white text-2xl"></i>
+                        </div>
                     </div>
                 </div>
-                <div class="text-center text-gray-500">
-                    <p>Data per tanggal: <span id="currentTargetDate" class="font-semibold text-blue-600">-</span></p>
+                
+                <div class="stat-card animate-slideInUp" style="animation-delay: 0.1s">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-4xl font-black text-green-600 mb-2" id="activePOs">-</div>
+                            <div class="text-sm text-gray-600 font-bold uppercase tracking-wide">Active PO</div>
+                        </div>
+                        <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-check-circle text-white text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card animate-slideInUp" style="animation-delay: 0.2s">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-4xl font-black text-purple-600 mb-2" id="poTotalMC">-</div>
+                            <div class="text-sm text-gray-600 font-bold uppercase tracking-wide">Total MC</div>
+                        </div>
+                        <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-boxes text-white text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card animate-slideInUp" style="animation-delay: 0.3s">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-4xl font-black text-orange-600 mb-2" id="poTotalKg">-</div>
+                            <div class="text-sm text-gray-600 font-bold uppercase tracking-wide">Total Weight</div>
+                        </div>
+                        <div class="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-weight text-white text-2xl"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
             
-            <!-- Target Date Data Table -->
-            <div class="bg-white rounded-lg shadow overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-800">Detail Stok Tanggal</h3>
+            <!-- PO Table -->
+            <div class="advanced-table animate-slideInUp">
+                <div class="table-header px-8 py-6">
+                    <h3 class="text-xl font-black">Purchase Order Details</h3>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full">
-                        <thead class="bg-gray-50">
+                        <thead class="bg-gradient-to-r from-gray-50 to-blue-50">
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produk</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Brand</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kode</th>
-                               
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">PO</th>
-                               
-                  
-                               
-                               
-                               
-                               <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">MC</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Kg</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lokasi</th>
+                                <th class="px-8 py-6 text-left text-xs font-black text-gray-700 uppercase tracking-wider">PO Number</th>
+                                <th class="px-8 py-6 text-left text-xs font-black text-gray-700 uppercase tracking-wider">Date</th>
+                                <th class="px-8 py-6 text-right text-xs font-black text-gray-700 uppercase tracking-wider">Items</th>
+                                <th class="px-8 py-6 text-right text-xs font-black text-gray-700 uppercase tracking-wider">Total MC</th>
+                                <th class="px-8 py-6 text-right text-xs font-black text-gray-700 uppercase tracking-wider">Total Weight</th>
+                                <th class="px-8 py-6 text-left text-xs font-black text-gray-700 uppercase tracking-wider">Status</th>
                             </tr>
                         </thead>
-                        <tbody id="targetDateTableBody" class="divide-y divide-gray-200">
+                        <tbody id="poTableBody" class="divide-y divide-gray-100">
                             <!-- Data populated by JavaScript -->
                         </tbody>
                     </table>
@@ -582,27 +639,424 @@
             </div>
         </div>
 
-        <!-- Grafik Section -->
-        <div id="grafik-section" class="section hidden">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">📊 Grafik Ringkas</h2>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Stok per Brand</h3>
-                    <div style="height: 250px;">
-                        <canvas id="brandChart"></canvas>
+        <!-- Brand Analysis Section -->
+        <div id="rekap-brand-section" class="section hidden">
+            <div class="mb-10">
+                <h2 class="text-5xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3">🏷️ Brand Analysis</h2>
+                <p class="text-gray-600 text-xl font-semibold">Brand Performance & Distribution Analysis</p>
+            </div>
+            
+            <!-- Brand Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
+                <div class="stat-card animate-slideInUp">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-4xl font-black text-purple-600 mb-2" id="totalBrands">-</div>
+                            <div class="text-sm text-gray-600 font-bold uppercase tracking-wide">Total Brands</div>
+                        </div>
+                        <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-tags text-white text-2xl"></i>
+                        </div>
                     </div>
                 </div>
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Trend Stok Mingguan</h3>
-                    <div style="height: 250px;">
-                        <canvas id="trendChart"></canvas>
+                
+                <div class="stat-card animate-slideInUp" style="animation-delay: 0.1s">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-4xl font-black text-pink-600 mb-2" id="topBrand">-</div>
+                            <div class="text-sm text-gray-600 font-bold uppercase tracking-wide">Top Brand</div>
+                        </div>
+                        <div class="w-16 h-16 bg-gradient-to-br from-pink-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-crown text-white text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card animate-slideInUp" style="animation-delay: 0.2s">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-4xl font-black text-indigo-600 mb-2" id="brandTotalMC">-</div>
+                            <div class="text-sm text-gray-600 font-bold uppercase tracking-wide">Avg MC/Brand</div>
+                        </div>
+                        <div class="w-16 h-16 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-chart-pie text-white text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card animate-slideInUp" style="animation-delay: 0.3s">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-4xl font-black text-teal-600 mb-2" id="brandTotalKg">-</div>
+                            <div class="text-sm text-gray-600 font-bold uppercase tracking-wide">Avg Kg/Brand</div>
+                        </div>
+                        <div class="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-balance-scale text-white text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Brand Chart and Table -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+                <div class="advanced-card p-8">
+                    <h3 class="text-xl font-black text-gray-800 mb-6">Brand Distribution</h3>
+                    <div class="h-80">
+                        <canvas id="brandDistributionChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="advanced-card p-8">
+                    <h3 class="text-xl font-black text-gray-800 mb-6">Top Brands by Weight</h3>
+                    <div class="space-y-4" id="topBrandsList">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Brand Table -->
+            <div class="advanced-table animate-slideInUp">
+                <div class="table-header px-8 py-6">
+                    <h3 class="text-xl font-black">Brand Performance Details</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gradient-to-r from-gray-50 to-purple-50">
+                            <tr>
+                                <th class="px-8 py-6 text-left text-xs font-black text-gray-700 uppercase tracking-wider">Brand Name</th>
+                                <th class="px-8 py-6 text-right text-xs font-black text-gray-700 uppercase tracking-wider">Products</th>
+                                <th class="px-8 py-6 text-right text-xs font-black text-gray-700 uppercase tracking-wider">Total MC</th>
+                                <th class="px-8 py-6 text-right text-xs font-black text-gray-700 uppercase tracking-wider">Total Weight</th>
+                                <th class="px-8 py-6 text-right text-xs font-black text-gray-700 uppercase tracking-wider">Market Share</th>
+                                <th class="px-8 py-6 text-left text-xs font-black text-gray-700 uppercase tracking-wider">Performance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="brandTableBody" class="divide-y divide-gray-100">
+                            <!-- Data populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Location Tracking Section -->
+        <div id="rekap-lokasi-section" class="section hidden">
+            <div class="mb-10">
+                <h2 class="text-5xl font-black bg-gradient-to-r from-blue-600 to-blue-600 bg-clip-text text-transparent mb-3">📍 Location Tracking</h2>
+                <p class="text-gray-600 text-xl font-semibold">Cold Storage Distribution & Location Analysis</p>
+            </div>
+            
+            <!-- Location Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
+                <div class="stat-card animate-slideInUp">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-4xl font-black text-green-600 mb-2" id="totalLocations">-</div>
+                            <div class="text-sm text-gray-600 font-bold uppercase tracking-wide">Locations</div>
+                        </div>
+                        <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-map-marker-alt text-white text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card animate-slideInUp" style="animation-delay: 0.1s">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-4xl font-black text-teal-600 mb-2" id="busyLocation">-</div>
+                            <div class="text-sm text-gray-600 font-bold uppercase tracking-wide">Busiest</div>
+                        </div>
+                        <div class="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-warehouse text-white text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card animate-slideInUp" style="animation-delay: 0.2s">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-4xl font-black text-blue-600 mb-2" id="locationTotalMC">-</div>
+                            <div class="text-sm text-gray-600 font-bold uppercase tracking-wide">Avg MC/Location</div>
+                        </div>
+                        <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-boxes text-white text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card animate-slideInUp" style="animation-delay: 0.3s">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-4xl font-black text-purple-600 mb-2" id="locationTotalKg">-</div>
+                            <div class="text-sm text-gray-600 font-bold uppercase tracking-wide">Avg Kg/Location</div>
+                        </div>
+                        <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-weight text-white text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Location Chart and Capacity -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+                <div class="advanced-card p-8">
+                    <h3 class="text-xl font-black text-gray-800 mb-6">Location Distribution</h3>
+                    <div class="h-80">
+                        <canvas id="locationChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="advanced-card p-8">
+                    <h3 class="text-xl font-black text-gray-800 mb-6">Cold Storage Capacity</h3>
+                    <div class="space-y-6" id="warehouseCapacity">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Location Table -->
+            <div class="advanced-table animate-slideInUp">
+                <div class="table-header px-8 py-6">
+                    <h3 class="text-xl font-black">Location Details</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gradient-to-r from-gray-50 to-green-50">
+                            <tr>
+                                <th class="px-8 py-6 text-left text-xs font-black text-gray-700 uppercase tracking-wider">Location</th>
+                                <th class="px-8 py-6 text-right text-xs font-black text-gray-700 uppercase tracking-wider">Products</th>
+                                <th class="px-8 py-6 text-right text-xs font-black text-gray-700 uppercase tracking-wider">Total MC</th>
+                                <th class="px-8 py-6 text-right text-xs font-black text-gray-700 uppercase tracking-wider">Total Weight</th>
+                                <th class="px-8 py-6 text-right text-xs font-black text-gray-700 uppercase tracking-wider">Utilization</th>
+                                <th class="px-8 py-6 text-left text-xs font-black text-gray-700 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="locationTableBody" class="divide-y divide-gray-100">
+                            <!-- Data populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Code Breakdown Section -->
+        <div id="code-breakdown-section" class="section hidden">
+            <div class="mb-10">
+                <h2 class="text-6xl font-black bg-gradient-to-r from-indigo-600 to-cyan-600 bg-clip-text text-transparent mb-3">🔍 Code Breakdown</h2>
+                <p class="text-gray-600 text-xl font-semibold">Product Breakdown code</p>
+            </div>
+            
+            <!-- Code Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
+                <div class="stat-card animate-slideInUp">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-4xl font-black text-indigo-600 mb-2" id="totalCodes">-</div>
+                            <div class="text-sm text-gray-600 font-bold uppercase tracking-wide">Total Brands</div>
+                        </div>
+                        <div class="w-16 h-16 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-tags text-white text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card animate-slideInUp" style="animation-delay: 0.1s">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-4xl font-black text-cyan-600 mb-2" id="uniqueCodeBrands">-</div>
+                            <div class="text-sm text-gray-600 font-bold uppercase tracking-wide">Unique Products</div>
+                        </div>
+                        <div class="w-16 h-16 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-cube text-white text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card animate-slideInUp" style="animation-delay: 0.2s">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-4xl font-black text-purple-600 mb-2" id="codeTotalMC">-</div>
+                            <div class="text-sm text-gray-600 font-bold uppercase tracking-wide">Total MC</div>
+                        </div>
+                        <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-boxes text-white text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card animate-slideInUp" style="animation-delay: 0.3s">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-4xl font-black text-emerald-600 mb-2" id="codeTotalKg">-</div>
+                            <div class="text-sm text-gray-600 font-bold uppercase tracking-wide">Total Weight</div>
+                        </div>
+                        <div class="w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-weight text-white text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Code Search and Filter -->
+            <div class="advanced-card p-8 mb-10 animate-slideInUp" style="animation-delay: 0.4s">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-2xl font-black text-gray-800">Code Search</h3>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-indigo-500 rounded-full animate-pulse"></div>
+                        <span class="text-sm font-semibold text-gray-600">Analysis</span>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-3">Search by Brand</label>
+                        <input type="text" id="codeSearch" placeholder="Search brands, products, codes..." 
+                               class="form-advanced w-full" onkeyup="CodeBreakdown.searchCodes()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-3">Filter by Brand</label>
+                        <select id="codeFilterBrand" class="form-advanced w-full" onchange="CodeBreakdown.filterCodes()">
+                            <option value="">All Brands</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-3">Filter PO</label>
+                        <select id="codeFilterPO" class="form-advanced w-full" onchange="CodeBreakdown.filterCodes()">
+                            <option value="">All PO Numbers</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="flex flex-wrap gap-4">
+                    <button onclick="CodeBreakdown.resetFilters()" class="bg-gray-500 hover:bg-gray-600 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-xl hover:shadow-2xl">
+                        <i class="fas fa-undo mr-2"></i>Reset Filters
+                    </button>
+                    <button onclick="CodeBreakdown.exportToPDF()" class="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-xl hover:shadow-2xl">
+                        <i class="fas fa-file-pdf mr-2"></i>Export PDF
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Code Breakdown Table -->
+            <div class="advanced-table animate-slideInUp" style="animation-delay: 0.5s">
+                <div class="table-header px-4 md:px-8 py-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg md:text-xl font-black">Product Code Details</h3>
+                        <div class="hidden md:flex items-center space-x-4">
+                            <span class="text-sm font-semibold opacity-90">Brand : Product : Packaging : Code</span>
+                            <div class="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Desktop Table -->
+                <div class="desktop-table overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gradient-to-r from-gray-50 to-indigo-50">
+                            <tr>
+                                <th class="px-8 py-6 text-left text-xs font-black text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-indigo-100 transition-colors" onclick="CodeBreakdown.sortTable('brand')">
+                                    Brand Name <i class="fas fa-sort ml-2 text-indigo-500"></i>
+                                </th>
+                                <th class="px-8 py-6 text-left text-xs font-black text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-indigo-100 transition-colors" onclick="CodeBreakdown.sortTable('po')">
+                                    PO Number <i class="fas fa-sort ml-2 text-indigo-500"></i>
+                                </th>
+                                <th class="px-8 py-6 text-right text-xs font-black text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-indigo-100 transition-colors" onclick="CodeBreakdown.sortTable('products')">
+                                    Products <i class="fas fa-sort ml-2 text-indigo-500"></i>
+                                </th>
+                                <th class="px-8 py-6 text-right text-xs font-black text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-indigo-100 transition-colors" onclick="CodeBreakdown.sortTable('mc')">
+                                    Total MC <i class="fas fa-sort ml-2 text-indigo-500"></i>
+                                </th>
+                                <th class="px-8 py-6 text-right text-xs font-black text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-indigo-100 transition-colors" onclick="CodeBreakdown.sortTable('kg')">
+                                    Total Weight <i class="fas fa-sort ml-2 text-indigo-500"></i>
+                                </th>
+                                <th class="px-8 py-6 text-left text-xs font-black text-gray-700 uppercase tracking-wider">
+                                    Product Details
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="codeTableBody" class="divide-y divide-gray-100">
+                            <!-- Data populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Mobile Code Breakdown -->
+                <div class="mobile-table p-4" id="mobileCodeTable">
+                    <!-- Mobile code cards populated by JavaScript -->
+                </div>
+                
+                <!-- Code Pagination -->
+                <div class="bg-gradient-to-r from-gray-50 to-indigo-50 px-8 py-6 flex items-center justify-between border-t border-gray-200">
+                    <div class="flex items-center space-x-4">
+                        <div class="text-sm text-gray-700 font-bold">
+                            Showing <span id="codeShowingStart" class="font-black text-indigo-600">0</span> - <span id="codeShowingEnd" class="font-black text-indigo-600">0</span> of <span id="codeTotalRecords" class="font-black text-indigo-600">0</span>
+                        </div>
+                        <select id="codeItemsPerPage" onchange="CodeBreakdown.changeItemsPerPage()" class="form-advanced text-sm py-2 px-3">
+                            <option value="10">10 per page</option>
+                            <option value="25">25 per page</option>
+                            <option value="50">50 per page</option>
+                            <option value="100">100 per page</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button onclick="CodeBreakdown.firstPage()" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-indigo-50 transition-colors shadow-sm font-bold" id="codeFirstBtn">
+                            <i class="fas fa-angle-double-left text-indigo-600"></i>
+                        </button>
+                        <button onclick="CodeBreakdown.previousPage()" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-indigo-50 transition-colors shadow-sm font-bold" id="codePrevBtn">
+                            <i class="fas fa-angle-left text-indigo-600"></i>
+                        </button>
+                        <span id="codePageInfo" class="px-6 py-2 bg-gradient-to-r from-indigo-500 to-cyan-600 text-white rounded-lg font-black shadow-lg">1</span>
+                        <button onclick="CodeBreakdown.nextPage()" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-indigo-50 transition-colors shadow-sm font-bold" id="codeNextBtn">
+                            <i class="fas fa-angle-right text-indigo-600"></i>
+                        </button>
+                        <button onclick="CodeBreakdown.lastPage()" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-indigo-50 transition-colors shadow-sm font-bold" id="codeLastBtn">
+                            <i class="fas fa-angle-double-right text-indigo-600"></i>
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <script src="main.js"></script>
+        <!-- Data Entry Summary Section -->
+        <div id="data-entry-summary-section" class="section hidden">
+            <div class="mb-10">
+                <h2 class="text-5xl font-black bg-gradient-to-r from-pink-600 to-blue-600 bg-clip-text text-transparent mb-3"> Data Entry Summary</h2>
+                <p class="text-gray-600 text-xl font-semibold">Daily Breakdown & Analysis</p>
+            </div>
+            
+            <!-- Date Entry Summary -->
+            <div class="advanced-card p-8 mb-10 animate-slideInUp" style="animation-delay: 0.1s">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-2xl font-black text-gray-800">📅 Entry by Date</h3>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                        <span class="text-sm font-semibold text-gray-600">Daily Breakdown</span>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Date Summary Chart -->
+                    <div class="h-80">
+                        <canvas id="dateSummaryChart"></canvas>
+                    </div>
+                    
+                    <!-- Date Summary Table -->
+                    <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6 max-h-80 overflow-y-auto">
+                        <h4 class="text-lg font-black text-gray-800 mb-4">Daily Statistics</h4>
+                        <div id="dateSummaryList" class="space-y-3">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-time Monitor Section -->
+        
+    <!-- Floating Action Button -->
     
-</body>
+
+    <script src="main.js"></script>              
+                 
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96921e4cb44db5ac',t:'MTc1NDE4NTM0Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
