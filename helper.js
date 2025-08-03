@@ -2,18 +2,23 @@
 // 🧠 Helper Permission Tools
 // ==========================
 
-// Map antara teks aksi dan permission-nya
+// Shortcut: current user permissions
+function getUserPerms() {
+    return State?.currentUser?.permissions || [];
+}
+
+// Cek apakah user punya akses
+function hasAccess(permission) {
+    const perms = getUserPerms();
+    return perms.includes(permission) || perms.includes('all');
+}
+
+// Map teks tombol ke permission
 const actionPermissionMap = {
     'Export PDF': 'export',
     'Analytics': 'analytics',
     'Data Summary': 'read'
 };
-
-// Cek apakah user punya akses
-function hasAccess(permission) {
-    const perms = State?.currentUser?.permissions || [];
-    return perms.includes(permission) || perms.includes('all');
-}
 
 // Filter actions yang boleh ditampilkan
 function secureActions() {
@@ -23,7 +28,7 @@ function secureActions() {
     });
 }
 
-// Render tombol actions yang sudah difilter
+// Render tombol actions yang diizinkan
 function renderActions() {
     const menu = document.getElementById('actionMenu');
     if (!menu) return;
@@ -46,16 +51,16 @@ function renderActions() {
     });
 }
 
-// Kunci fungsi export jika tidak punya akses
+// Kunci akses langsung ke Export.toPDF
 (function lockExportPDF() {
     if (typeof Export !== 'undefined' && typeof Export.toPDF === 'function') {
-        const originalExportPDF = Export.toPDF;
+        const original = Export.toPDF;
         Export.toPDF = function () {
             if (!hasAccess('export')) {
                 alert('❌ Kamu tidak punya akses export PDF.');
                 return;
             }
-            originalExportPDF();
+            original();
         };
     }
 })();
