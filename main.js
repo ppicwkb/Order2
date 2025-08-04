@@ -1,10 +1,10 @@
     // ===== ENHANCED CONFIGURATION =====
         const CONFIG = {
             VERSION: '49.0.0',
-            SHEET_ID: '18ga4stLBiKWujBryPQHUHrUzgYjprFJEKvUWSd3Zcks',
+            SHEET_ID: '18ga4stLBiKWujBryPQHUHrUzgYjprFJEKvUWSd3Zcks', //data WKB cs
             SHEET_NAME: 'WKB',
             API_KEY: 'AIzaSyBBY9oqeEjjpVnIXOhdkhR6xuTsCr5gYU8',
-            ITEMS_PER_PAGE: window.innerWidth <= 768 ? 5 : 10,
+            ITEMS_PER_PAGE: window.innerWidth <= 768 ? 10 : 20,
             MAX_ITEMS_PER_PAGE: 100,
             AUTO_REFRESH_INTERVAL: 600000, // 5 minutes
             ANIMATION_DURATION: 300,
