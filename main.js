@@ -393,25 +393,7 @@
             },
 
                 
-                loadSampleData(elements) {
-                console.log('📝 Loading sample data...');
                 
-                const sampleData = [
-                    ['29/01/2024', 'PREMIUM RICE', '25 KG', 'BRAND ALPHA', 'PR001', 'PO-2024-001', 150, 3750, 'WAREHOUSE A'],
-                    ['29/01/2024', 'SUGAR WHITE', '1 KG', 'BRAND BETA', 'SW002', 'PO-2024-002', 300, 300, 'WAREHOUSE B'],
-                    ['30/01/2024', 'COOKING OIL', '2 L', 'BRAND GAMMA', 'CO003', 'PO-2024-003', 200, 400, 'WAREHOUSE A'],
-                    ['30/01/2024', 'WHEAT FLOUR', '1 KG', 'BRAND ALPHA', 'WF004', 'PO-2024-001', 400, 400, 'WAREHOUSE C'],
-                    ['31/01/2024', 'COFFEE POWDER', '200 G', 'BRAND DELTA', 'CP005', 'PO-2024-004', 120, 24, 'WAREHOUSE B'],
-                    ['31/01/2024', 'TEA BAGS', '25 PCS', 'BRAND BETA', 'TB006', 'PO-2024-002', 180, 45, 'WAREHOUSE A'],
-                    ['01/02/2024', 'MILK POWDER', '400 G', 'BRAND EPSILON', 'MP007', 'PO-2024-005', 100, 40, 'WAREHOUSE C'],
-                    ['01/02/2024', 'BUTTER', '200 G', 'BRAND GAMMA', 'BT008', 'PO-2024-003', 80, 16, 'WAREHOUSE B'],
-                    ['02/02/2024', 'CHEESE SLICES', '200 G', 'BRAND ZETA', 'CS009', 'PO-2024-006', 60, 12, 'WAREHOUSE A'],
-                    ['02/02/2024', 'BREAD LOAF', '400 G', 'BRAND ETA', 'BL010', 'PO-2024-007', 100, 40, 'WAREHOUSE C']
-                ];
-                
-                State.targetDate = '29/01/2024';
-                this.completeLoading(sampleData, elements, false);
-            },
 
             completeLoading(data, elements, isAutoRefresh) {
                 const previousDataLength = State.stockData.length;
