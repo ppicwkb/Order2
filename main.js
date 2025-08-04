@@ -67,7 +67,8 @@
                     try {
                         State.currentUser = JSON.parse(savedUser);
 
-renderActions();
+
+                        
 
                         if (this.validateSession()) {
                             this.showDashboard();
