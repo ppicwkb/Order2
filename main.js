@@ -1,9 +1,9 @@
     // ===== ENHANCED CONFIGURATION =====
         const CONFIG = {
             VERSION: '49.0.0',
-            SHEET_ID: '18ga4stLBiKWujBryPQHUHrUzgYjprFJEKvUWSd3Zcks', //data WKB cs
+            SHEET_ID: '1pK5OYbhJjc1Dpt__cZZyEg-iblOVfVqt3zmaCC88NzU', //data WKB cs
             SHEET_NAME: 'WKB',
-            API_KEY: 'AIzaSyBBY9oqeEjjpVnIXOhdkhR6xuTsCr5gYU8',
+            API_KEY: 'AIzaSyCfnSym_wpPtzWL0P3-kslY1Y14B7nD-34',
             ITEMS_PER_PAGE: window.innerWidth <= 768 ? 10 : 20,
             MAX_ITEMS_PER_PAGE: 100,
             AUTO_REFRESH_INTERVAL: 600000, // 5 minutes
