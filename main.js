@@ -1,7 +1,7 @@
     // ===== ENHANCED CONFIGURATION =====
         const CONFIG = {
             VERSION: '49.0.0',
-            SHEET_ID: '1pK5OYbhJjc1Dpt__cZZyEg-iblOVfVqt3zmaCC88NzU', //data WKB cs
+            SHEET_ID: '1pK5OYbhJjc1Dpt__cZZyEg-iblOVfVqt3zmaCC88NzU', //data view cs WKB
             SHEET_NAME: 'WKB',
             API_KEY: 'AIzaSyCfnSym_wpPtzWL0P3-kslY1Y14B7nD-34',
             ITEMS_PER_PAGE: window.innerWidth <= 768 ? 10 : 20,
