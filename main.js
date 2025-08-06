@@ -3,7 +3,7 @@
     VERSION: '49.0.0',
     
     JSON_URL: 'data.json', // Tambahkan ini sebagai pengganti Google Sheets
-    ITEMS_PER_PAGE: window.innerWidth <= 768 ? 5 : 10,
+    ITEMS_PER_PAGE: window.innerWidth <= 768 ? 10 : 10,
     MAX_ITEMS_PER_PAGE: 100,
     AUTO_REFRESH_INTERVAL: 600000, // 5 minutes
     ANIMATION_DURATION: 300,
@@ -1214,7 +1214,7 @@ if (targetDate) {
                 // Update warehouse capacity
                 const warehouseCapacity = document.getElementById('warehouseCapacity');
                 if (warehouseCapacity) {
-                    const maxCapacity = 10000; // Assumed max capacity per warehouse
+                    const maxCapacity = 200000; // Assumed max capacity per warehouse
                     warehouseCapacity.innerHTML = sortedLocations.slice(0, 6).map(([location, data], index) => {
                         const utilization = Math.min((data.kg / maxCapacity) * 100, 100);
                         const utilizationClass = utilization > 80 ? 'bg-red-500' : utilization > 60 ? 'bg-yellow-500' : 'bg-green-500';
@@ -1237,7 +1237,7 @@ if (targetDate) {
                 // Update location table
                 const tbody = document.getElementById('locationTableBody');
                 if (tbody) {
-                    const maxCapacity = 10000;
+                    const maxCapacity = 200000;
                     tbody.innerHTML = sortedLocations.map(([location, data], index) => {
                         const utilization = Math.min((data.kg / maxCapacity) * 100, 100);
                         const status = utilization > 80 ? 'High' : utilization > 60 ? 'Medium' : 'Normal';
