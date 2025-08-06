@@ -1,14 +1,14 @@
     // ===== ENHANCED CONFIGURATION =====
         const CONFIG = {
-            VERSION: '49.0.0',
-            SHEET_ID: '1pK5OYbhJjc1Dpt__cZZyEg-iblOVfVqt3zmaCC88NzU', //data view cs WKB
-            SHEET_NAME: 'WKB',
-            API_KEY: 'AIzaSyCfnSym_wpPtzWL0P3-kslY1Y14B7nD-34',
-            ITEMS_PER_PAGE: window.innerWidth <= 768 ? 10 : 20,
-            MAX_ITEMS_PER_PAGE: 100,
-            AUTO_REFRESH_INTERVAL: 600000, // 5 minutes
-            ANIMATION_DURATION: 300,
-            TARGET_DATE_CELL: 'J1',
+    VERSION: '49.0.0',
+    
+    JSON_URL: 'data.json', // Tambahkan ini sebagai pengganti Google Sheets
+    ITEMS_PER_PAGE: window.innerWidth <= 768 ? 5 : 10,
+    MAX_ITEMS_PER_PAGE: 100,
+    AUTO_REFRESH_INTERVAL: 600000, // 5 minutes
+    ANIMATION_DURATION: 300,
+    TARGET_DATE_CELL: 'targetDate',
+
             USERS: {
                 'ppic': { password: '4', role: 'ppic', name: 'Planning Production', permissions: ['all'] },
                 'qc': { password: '2', role: 'qc', name: 'Quality Control', permissions: ['read', 'export', 'analytics'] },
@@ -215,19 +215,19 @@
             },
 
             startAutoRefresh() {
-                if (State.autoRefreshTimer) {
-                    clearInterval(State.autoRefreshTimer);
-                }
-                
-                if (CONFIG.FEATURES.REAL_TIME_UPDATES) {
-                    State.autoRefreshTimer = setInterval(() => {
-                        if (!document.hidden) {
-                            console.log('🔄 Auto-refreshing data...');
-                            DataLoader.loadFromGoogleSheets(true);
-                        }
-                    }, CONFIG.AUTO_REFRESH_INTERVAL);
-                }
-            },
+    if (State.autoRefreshTimer) {
+        clearInterval(State.autoRefreshTimer);
+    }
+
+    if (CONFIG.FEATURES.REAL_TIME_UPDATES) {
+        State.autoRefreshTimer = setInterval(() => {
+            if (!document.hidden) {
+                console.log('🔄 Auto-refreshing data...');
+                DataLoader.loadFromJSON(true); // Ganti dari loadFromGoogleSheets
+            }
+        }, CONFIG.AUTO_REFRESH_INTERVAL);
+    }
+},
 
             logout() {
                 if (confirm('Are you sure you want to logout?')) {
@@ -248,107 +248,94 @@
 
         // ===== ENHANCED DATA LOADER MODULE =====
         const DataLoader = {
-            init() {
-                console.log('📊 Initializing Google Sheets data loading system...');
-                this.loadFromGoogleSheets();
-            },
+    init() {
+        console.log('📊 Initializing JSON data loading system...');
+        this.loadFromJSON();
+    },
 
-            async loadFromGoogleSheets(isAutoRefresh = false) {
-                const startTime = performance.now();
-                console.log('🔄 Loading data from Google Sheets...', isAutoRefresh ? '(Auto-refresh)' : '(Manual)');
-                
-                const elements = {
-                    dataStatus: document.getElementById('dataStatus'),
-                    loadProgress: document.getElementById('loadProgress'),
-                    progressBar: document.getElementById('progressBar'),
-                    progressText: document.getElementById('progressText'),
-                    refreshBtn: document.getElementById('refreshBtn')
-                };
-                
-                if (!isAutoRefresh) {
-                    this.updateLoadingUI(elements, 'loading');
-                }
-                
-                try {
-                    if (!isAutoRefresh) {
-                        this.updateProgress(elements, 20, 'Connecting to Google Sheets API...');
-                    }
-                    
-                    // Get target date from specific cell
-                    const targetDateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}!${CONFIG.TARGET_DATE_CELL}?key=${CONFIG.API_KEY}`;
-                    
-                    let targetDate = null;
-                    try {
-                        const targetDateResponse = await fetch(targetDateUrl);
-                        if (targetDateResponse.ok) {
-                            const targetDateData = await targetDateResponse.json();
-                            if (targetDateData.values && targetDateData.values[0] && targetDateData.values[0][0]) {
-                                targetDate = targetDateData.values[0][0];
-                                console.log('📅 Target date from sheet:', targetDate);
-                            }
-                        }
-                    } catch (error) {
-                        console.warn('⚠️ Could not fetch target date:', error.message);
-                    }
-                    
-                    if (!isAutoRefresh) {
-                        this.updateProgress(elements, 40, 'Fetching sheet data...');
-                    }
-                    
-                    // Get all data from the sheet
-                    const dataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}?key=${CONFIG.API_KEY}`;
-                    
-                    const response = await fetch(dataUrl);
-                    
-                    if (!response.ok) {
-                        throw new Error(`Google Sheets API error: ${response.status} ${response.statusText}`);
-                    }
-                    
-                    const data = await response.json();
-                    
-                    if (!data.values || data.values.length === 0) {
-                        throw new Error('No data found in Google Sheets');
-                    }
-                    
-                    if (!isAutoRefresh) {
-                        this.updateProgress(elements, 70, 'Processing sheet data...');
-                    }
-                    
-                    // Set target date
-                    if (targetDate) {
-                        State.targetDate = targetDate;
-                    } else if (data.values.length > 1 && data.values[1][0]) {
-                        State.targetDate = data.values[1][0]; // First data row, first column
-                    }
-                    
-                    if (!isAutoRefresh) {
-                        this.updateProgress(elements, 90, 'Formatting data...');
-                    }
-                    
-                    // Process data (skip header row)
-                    const processedData = this.processSheetData(data.values);
-                    
-                    if (processedData.length === 0) {
-                        throw new Error('No valid data found in Google Sheets');
-                    }
-                    
-                    // Update performance metrics
-                    const loadTime = performance.now() - startTime;
-                    State.performance.loadTime = loadTime;
-                    State.performance.dataSize = JSON.stringify(data.values).length;
-                    
-                    console.log(`✅ Successfully loaded ${processedData.length} records from Google Sheets`);
-                    this.completeLoading(processedData, elements, isAutoRefresh);
-                    
-                } catch (error) {
-                    console.error('❌ Error loading data from Google Sheets:', error);
-                    if (!isAutoRefresh) {
-                        this.loadSampleData(elements);
-                    } else {
-                        Utils.showNotification('error', '⚠️ Auto-refresh failed - using cached data');
-                    }
-                }
-            },
+    async loadFromJSON(isAutoRefresh = false) {
+        const startTime = performance.now();
+        console.log('🔄 Loading data from JSON file...', isAutoRefresh ? '(Auto-refresh)' : '(Manual)');
+
+        const elements = {
+            dataStatus: document.getElementById('dataStatus'),
+            loadProgress: document.getElementById('loadProgress'),
+            progressBar: document.getElementById('progressBar'),
+            progressText: document.getElementById('progressText'),
+            refreshBtn: document.getElementById('refreshBtn')
+        };
+
+        if (!isAutoRefresh) {
+            this.updateLoadingUI(elements, 'loading');
+        }
+
+        try {
+            if (!isAutoRefresh) {
+                this.updateProgress(elements, 20, 'Connecting to local JSON...');
+            }
+
+            const response = await fetch(CONFIG.JSON_URL);
+
+            if (!response.ok) {
+                throw new Error(`JSON file error: ${response.status} ${response.statusText}`);
+            }
+
+            const jsonData = await response.json();
+
+            if (!jsonData || !jsonData.values || jsonData.values.length === 0) {
+                throw new Error('No data found in JSON file');
+            }
+
+            if (!isAutoRefresh) {
+                this.updateProgress(elements, 70, 'Processing JSON data...');
+            }
+
+            // Optional: ambil target date dari JSON jika tersedia
+           let targetDate = null;
+
+// Cek apakah ada key 'targetdate' (huruf kecil semua)
+if (jsonData.targetdate) {
+    targetDate = jsonData.targetdate;
+}
+// Fallback: kalau targetdate nggak ada, coba ambil dari baris pertama data.values
+else if (jsonData.values && jsonData.values.length > 1 && jsonData.values[1][0]) {
+    targetDate = jsonData.values[1][0];
+}
+
+if (targetDate) {
+    State.targetDate = targetDate;
+    console.log('📅 Target date from JSON:', targetDate);
+}
+
+            
+
+            if (!isAutoRefresh) {
+                this.updateProgress(elements, 90, 'Formatting data...');
+            }
+
+            const processedData = this.processSheetData(jsonData.values);
+
+            if (processedData.length === 0) {
+                throw new Error('No valid data found in JSON');
+            }
+
+            // Update performance metrics
+            const loadTime = performance.now() - startTime;
+            State.performance.loadTime = loadTime;
+            State.performance.dataSize = JSON.stringify(jsonData.values).length;
+
+            console.log(`✅ Successfully loaded ${processedData.length} records from JSON`);
+            this.completeLoading(processedData, elements, isAutoRefresh);
+
+        } catch (error) {
+            console.error('❌ Error loading data from JSON:', error);
+            if (!isAutoRefresh) {
+                this.loadSampleData(elements);
+            } else {
+                Utils.showNotification('error', '⚠️ Auto-refresh failed - using cached data');
+            }
+        }
+    },
 
             processSheetData(sheetValues) {
                 const processedData = [];
@@ -393,7 +380,14 @@
             },
 
                 
+                loadSampleData(elements) {
+                console.log('📝 Loading sample data...');
                 
+                
+                
+                State.targetDate = '29/01/2024';
+                this.completeLoading(sampleData, elements, false);
+            },
 
             completeLoading(data, elements, isAutoRefresh) {
                 const previousDataLength = State.stockData.length;
@@ -2479,11 +2473,27 @@
             },
 
             updateLastUpdateTime() {
-                const lastUpdateElement = document.getElementById('lastUpdateTime');
-                if (lastUpdateElement && State.targetDate) {
-                    lastUpdateElement.textContent = `Update: ${State.targetDate}`;
-                }
-            }
+    const el = document.getElementById('lastUpdateTime');
+    if (!el) return;
+
+    const rawDate = State.targetDate;
+    if (!rawDate) {
+        el.textContent = 'Belum ada tanggal update';
+        return;
+    }
+
+    const date = new Date(rawDate);
+    if (isNaN(date)) {
+        el.textContent = `Update: ${rawDate}`; // fallback
+    } else {
+        const formatted = date.toLocaleDateString('id-ID', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+        });
+        el.textContent = `Update: ${formatted}`;
+    }
+}
         };
 
         // ===== PERFORMANCE MONITORING MODULE =====
