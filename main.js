@@ -35,7 +35,7 @@
             sortColumn: -1,
             sortDirection: 'asc',
             isLoading: false,
-            targetDate: '29/01/2024',
+            targetDate: '30/08/2025',
             lastUpdate: null,
             autoRefreshTimer: null,
             searchCache: new Map(),
